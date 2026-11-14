@@ -1,0 +1,16 @@
+[
+  {
+    "id": "ceara",
+    "name": "Ceará",
+    "country": "Brazil",
+    "geometryName": "ceara_outline",
+    "geometryRef": "https://example.org/geojson/ceara"
+  },
+  {
+    "id": "northeast_brazil",
+    "name": "Northeast Brazil",
+    "country": "Brazil",
+    "geometryName": "northeast_brazil_outline",
+    "geometryRef": "https://example.org/geojson/northeast-brazil"
+  }
+]
