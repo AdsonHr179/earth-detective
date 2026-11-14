@@ -11,3 +11,7 @@ frontend/dist/
 .env.*
 .DS_Store
 coverage/
+
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts
