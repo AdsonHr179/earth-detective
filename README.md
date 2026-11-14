@@ -31,6 +31,11 @@ Earth Detective is an MVP for exploring environmental change using Earth observa
 
 Project timeline and outstanding MVP work (Portuguese): [docs/CRONOGRAMA_DO_PROJETO_PT_BR.md](docs/CRONOGRAMA_DO_PROJETO_PT_BR.md).
 
+The English project foundation and architecture references are indexed in
+[docs/README.md](docs/README.md), including the [project overview](docs/EARTH_DETECTIVE.md),
+[orchestrator guide](docs/EARTH_DETECTIVE_ORCHESTRATOR.md), [AI prompts](docs/EARTH_DETECTIVE_PROMPTS.md),
+and [documentation guide](docs/EARTH_DETECTIVE_DOCUMENTATION_AI.md).
+
 ## Quick start
 
 ### Backend
