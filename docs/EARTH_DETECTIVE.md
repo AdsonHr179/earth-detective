@@ -21,7 +21,7 @@ This document describes a project to be implemented. Data products, versions, co
 
 | Feature | Expected behavior |
 | --- | --- |
-| Catalog | Air temperature, precipitation, and soil moisture; enable each only after verifying availability |
+| Catalog | Air, precipitation, soil, wind, humidity, pressure, radiation, and water-balance time series; verify account coverage per query |
 | Region | Select a predefined region from a map or list |
 | Period | Choose a period limited to the product's coverage for that region |
 | Time series | Monthly chart with units, gaps, and data source |
@@ -99,15 +99,19 @@ Label the original monthly series and the series used for inference separately. 
 
 ## 7. Data and provenance
 
-### 7.1 Candidate sources
+### 7.1 Selected API provider and data sources
 
-| Variable | Candidate source | Checks required before integration |
+Meteomatics is the selected API provider for the real-data integration. Its Weather API exposes weather, environmental, and climate products through a common interface. The API provider is not itself a single dataset: each catalog variable must identify the exact parameter, underlying product or model, and version used.
+
+| Variable | Planned source | Checks required before integration |
 | --- | --- | --- |
-| Air temperature | MERRA-2 | Height or level, unit, grid, version, and coverage |
-| Precipitation | GPM | Specific product, rate or accumulation, quality, and coverage |
-| Soil moisture | GLDAS | Soil layer, depth, unit, and model configuration |
+| Air temperature | Meteomatics Weather API | Exact parameter and product/model, height, unit, resolution, version, and coverage |
+| Precipitation | Meteomatics Weather API | Exact parameter and product/model, accumulation interval, unit, quality, and coverage |
+| Soil moisture | Meteomatics Weather API, availability to verify | Exact parameter and product/model, soil depth, unit, configuration, and coverage |
 
-These are proposed integrations. The data team must consult official documentation and record links, exact identifiers, and access requirements in the manifest. Do not assume that different products have identical coverage.
+Before enabling a variable, verify its availability under the project's Meteomatics plan and record official parameter documentation, exact identifiers, source/model, units, temporal and spatial resolution, coverage, licensing, and access requirements in the manifest. For long-term trend analysis, choose a suitable historical product and check for source or model changes across the selected period. Label model- or reanalysis-derived data accurately; do not describe them as direct observations. Do not assume different products have identical coverage.
+
+Official references: [Meteomatics Weather API](https://www.meteomatics.com/en/weather-api/) and [API documentation](https://www.meteomatics.com/en/api/getting-started/). API credentials must remain server-side in environment configuration and must never be committed or exposed to the frontend.
 
 ### 7.2 Pipeline
 

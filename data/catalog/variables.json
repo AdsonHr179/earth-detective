@@ -4,20 +4,20 @@
     "name": "Air Temperature",
     "unit": "°C",
     "description": "Near-surface temperature used to detect warming patterns.",
-    "source": "Synthetic demo source for MVP"
+    "source": "Meteomatics Weather API"
   },
   {
     "id": "precipitation",
     "name": "Precipitation",
     "unit": "mm/month",
     "description": "Monthly precipitation total for rainfall-change analysis.",
-    "source": "Synthetic demo source for MVP"
+    "source": "Meteomatics Weather API"
   },
   {
     "id": "soil_moisture",
     "name": "Soil Moisture",
     "unit": "m3/m3",
     "description": "Near-surface water content used to assess soil-water change.",
-    "source": "Synthetic demo source for MVP"
+    "source": "Not configured: no validated Meteomatics parameter"
   }
 ]

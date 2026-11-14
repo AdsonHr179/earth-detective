@@ -4,13 +4,23 @@
     "name": "Ceará",
     "country": "Brazil",
     "geometryName": "ceara_outline",
-    "geometryRef": "https://example.org/geojson/ceara"
+    "geometryRef": "https://servicodados.ibge.gov.br/api/v3/malhas/estados",
+    "boundaryStateCodes": ["23"],
+    "center": {
+      "latitude": -5.2,
+      "longitude": -39.5
+    }
   },
   {
     "id": "northeast_brazil",
     "name": "Northeast Brazil",
     "country": "Brazil",
     "geometryName": "northeast_brazil_outline",
-    "geometryRef": "https://example.org/geojson/northeast-brazil"
+    "geometryRef": "https://servicodados.ibge.gov.br/api/v3/malhas/estados",
+    "boundaryStateCodes": ["21", "22", "23", "24", "25", "26", "27", "28", "29"],
+    "center": {
+      "latitude": -9,
+      "longitude": -38.5
+    }
   }
 ]

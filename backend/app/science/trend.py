@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-from statistics import mean
+from datetime import date
 
 import numpy as np
 from scipy import stats
 
 
 def analyze_time_series(points: list[dict]) -> dict:
-    values = [float(point["value"]) for point in points if point["value"] is not None]
+    valid_points = [point for point in points if point["value"] is not None]
+    values = [float(point["value"]) for point in valid_points]
     if len(values) < 3:
         return {
             "direction": "undetermined",
@@ -21,8 +22,19 @@ def analyze_time_series(points: list[dict]) -> dict:
             "inference_method": "not_enough_data",
         }
 
-    years = np.arange(len(values), dtype=float)
-    slope, intercept, r_value, p_value, stderr = stats.linregress(years, values)
+    try:
+        timestamps = [
+            date.fromisoformat(str(point["timestamp"])[:10]).toordinal() / 365.2425
+            for point in valid_points
+        ]
+    except (KeyError, TypeError, ValueError):
+        timestamps = np.arange(len(values), dtype=float).tolist()
+
+    time_axis = np.asarray(timestamps, dtype=float)
+    if len(np.unique(time_axis)) < 2:
+        time_axis = np.arange(len(values), dtype=float)
+
+    slope, intercept, r_value, p_value, stderr = stats.linregress(time_axis, values)
     slope_per_decade = slope * 10.0
     interval = 1.96 * stderr * 10.0
     ci_lower = slope_per_decade - interval
