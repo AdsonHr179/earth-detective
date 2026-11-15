@@ -2,16 +2,35 @@ from __future__ import annotations
 
 import csv
 import io
+import logging
+import sqlite3
+import threading
+import time
 import uuid
+from collections import OrderedDict
 from datetime import date
 
-from fastapi import FastAPI, HTTPException, Query
-from fastapi.responses import StreamingResponse
+from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse, StreamingResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.config import API_PREFIX, APP_NAME, APP_VERSION, DATA_SOURCE
+from app.config import (
+    API_PREFIX,
+    ANALYSIS_CACHE_MAX_SIZE,
+    ANALYSIS_CACHE_TTL_SECONDS,
+    APP_NAME,
+    APP_VERSION,
+    DATA_SOURCE,
+    MAX_CONCURRENT_ANALYSES,
+    MAX_REQUEST_BODY_BYTES,
+)
 from app.data_catalog import VARIABLES, REGIONS, get_region, get_variable
 from app.schemas import AnalysisRequest, AnalysisResponse, AvailabilityResponse, GeoJSONPoint, RegionCatalogItem, SeriesPoint, VariableCatalogItem
+from app.services import analysis_store, nasa, nasa_analysis
+from app.schemas import NasaAnalysisResponse, SavedAnalysisSummary
 from app.services.meteomatics import (
+    DATASET_VERSION as METEOMATICS_DATASET_VERSION,
     METHOD_VERSION as METEOMATICS_METHOD_VERSION,
     SOURCE_URL as METEOMATICS_SOURCE_URL,
     MeteomaticsConfigurationError,
@@ -22,10 +41,238 @@ from app.services.meteomatics import (
     fetch_monthly_series,
     parameter_spec,
     supported_variable,
+    validate_provider_configuration,
 )
-from app.science.trend import analyze_time_series
+from app.science.trend import (
+    ALPHA,
+    CONFIDENCE_MULTIPLIER,
+    DAYS_PER_YEAR,
+    DIRECTION_EPSILON,
+    ESTIMATOR,
+    INFERENCE_METHOD,
+    MINIMUM_VALID_POINTS,
+    analyze_time_series,
+)
 
 app = FastAPI(title=APP_NAME, version=APP_VERSION)
+logger = logging.getLogger(__name__)
+_ANALYSIS_SEMAPHORE = threading.BoundedSemaphore(MAX_CONCURRENT_ANALYSES)
+_ANALYSIS_CACHE: OrderedDict[tuple, tuple[float, AnalysisResponse]] = OrderedDict()
+_ANALYSIS_CACHE_LOCK = threading.Lock()
+
+
+class RequestTooLargeError(Exception):
+    pass
+
+
+class RequestSizeLimitMiddleware:
+    def __init__(self, app, max_body_bytes: int):
+        self.app = app
+        self.max_body_bytes = max_body_bytes
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        content_length = next(
+            (value for name, value in scope.get("headers", []) if name.lower() == b"content-length"),
+            None,
+        )
+        if content_length is not None:
+            try:
+                declared_length = int(content_length)
+            except ValueError:
+                declared_length = 0
+            if declared_length > self.max_body_bytes:
+                response = JSONResponse(
+                    status_code=413,
+                    content={
+                        "detail": "Request body exceeds the allowed size",
+                        "error": {
+                            "code": "request_too_large",
+                            "message": "Request body exceeds the allowed size",
+                        },
+                    },
+                )
+                await response(scope, receive, send)
+                return
+
+        received_bytes = 0
+
+        async def limited_receive():
+            nonlocal received_bytes
+            message = await receive()
+            if message["type"] == "http.request":
+                received_bytes += len(message.get("body", b""))
+                if received_bytes > self.max_body_bytes:
+                    raise RequestTooLargeError()
+            return message
+
+        await self.app(scope, limited_receive, send)
+
+
+app.add_middleware(
+    RequestSizeLimitMiddleware,
+    max_body_bytes=MAX_REQUEST_BODY_BYTES,
+)
+
+
+def _error_response(status_code: int, code: str, message: str, headers=None) -> JSONResponse:
+    return JSONResponse(
+        status_code=status_code,
+        content={"detail": message, "error": {"code": code, "message": message}},
+        headers=headers,
+    )
+
+
+@app.exception_handler(StarletteHTTPException)
+async def handle_http_error(_request: Request, exc: StarletteHTTPException) -> JSONResponse:
+    detail = exc.detail if isinstance(exc.detail, str) else "Request failed"
+    code = {
+        404: "not_found",
+        409: "conflict",
+        413: "request_too_large",
+        422: "invalid_request",
+        502: "upstream_error",
+        503: "service_unavailable",
+    }.get(exc.status_code, "http_error")
+    return _error_response(exc.status_code, code, detail, exc.headers)
+
+
+@app.exception_handler(RequestValidationError)
+async def handle_validation_error(
+    _request: Request, exc: RequestValidationError
+) -> JSONResponse:
+    issues = []
+    for error in exc.errors():
+        location = ".".join(str(part) for part in error.get("loc", ()))
+        message = error.get("msg", "Invalid value")
+        issues.append(f"{location}: {message}" if location else message)
+    detail = "Request validation failed"
+    if issues:
+        detail = f"{detail}: {'; '.join(issues)}"
+    return _error_response(422, "invalid_request", detail)
+
+
+@app.exception_handler(RequestTooLargeError)
+async def handle_oversized_request(
+    _request: Request, _exc: RequestTooLargeError
+) -> JSONResponse:
+    return _error_response(
+        413,
+        "request_too_large",
+        "Request body exceeds the allowed size",
+    )
+
+
+@app.exception_handler(sqlite3.Error)
+async def handle_database_error(_request: Request, _exc: sqlite3.Error) -> JSONResponse:
+    return _error_response(503, "analysis_storage_unavailable", "The analysis database is unavailable.")
+
+
+@app.exception_handler(Exception)
+async def handle_unexpected_error(request: Request, exc: Exception) -> JSONResponse:
+    logger.error(
+        "Unhandled request failure: method=%s path=%s error_type=%s",
+        request.method,
+        request.url.path,
+        type(exc).__name__,
+    )
+    return _error_response(500, "internal_error", "Internal server error")
+
+
+def _build_limited_analysis(payload: AnalysisRequest) -> AnalysisResponse:
+    product = nasa.PRODUCTS.get(payload.variable_id)
+    if product is not None:
+        months = nasa_analysis.validate(payload, product)
+        model = product.version
+    else:
+        _validate_analysis_request(
+            payload.variable_id, payload.region_id, payload.start_date,
+            payload.end_date, payload.dataset_version,
+        )
+        try:
+            model = validate_provider_configuration()
+        except MeteomaticsConfigurationError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    cache_key = _analysis_cache_key(payload, model)
+    now = time.monotonic()
+    with _ANALYSIS_CACHE_LOCK:
+        cached = _ANALYSIS_CACHE.get(cache_key)
+        if cached is not None:
+            cached_at, result = cached
+            if now - cached_at < ANALYSIS_CACHE_TTL_SECONDS:
+                _ANALYSIS_CACHE.move_to_end(cache_key)
+                return result.model_copy(deep=True)
+            del _ANALYSIS_CACHE[cache_key]
+
+    if not _ANALYSIS_SEMAPHORE.acquire(blocking=False):
+        raise HTTPException(
+            status_code=503,
+            detail="Analysis capacity is temporarily full; retry the request shortly",
+            headers={"Retry-After": "1"},
+        )
+    try:
+        if product is not None:
+            result = nasa_analysis.analyze(payload, product, months)
+        else:
+            result = _build_analysis_payload(
+                payload.variable_id, payload.region_id, payload.start_date, payload.end_date,
+                payload.dataset_version, payload.spatial_query, model,
+            )
+        with _ANALYSIS_CACHE_LOCK:
+            _ANALYSIS_CACHE[cache_key] = (time.monotonic(), result)
+            _ANALYSIS_CACHE.move_to_end(cache_key)
+            while len(_ANALYSIS_CACHE) > ANALYSIS_CACHE_MAX_SIZE:
+                _ANALYSIS_CACHE.popitem(last=False)
+        return result.model_copy(deep=True)
+    finally:
+        _ANALYSIS_SEMAPHORE.release()
+
+
+def _analysis_cache_key(payload: AnalysisRequest, model: str) -> tuple:
+    region = get_region(payload.region_id)
+    if payload.spatial_query is not None:
+        geometry = (
+            payload.spatial_query.type,
+            *payload.spatial_query.coordinates,
+        )
+    elif region is not None:
+        geometry = (
+            "Point",
+            region["center"]["longitude"],
+            region["center"]["latitude"],
+        )
+    else:
+        geometry = None
+
+    statistical_parameters = (
+        ALPHA,
+        MINIMUM_VALID_POINTS,
+        ESTIMATOR,
+        INFERENCE_METHOD,
+        DIRECTION_EPSILON,
+        CONFIDENCE_MULTIPLIER,
+        DAYS_PER_YEAR,
+    )
+    return (
+        payload.variable_id,
+        payload.region_id,
+        payload.start_date.isoformat(),
+        payload.end_date.isoformat(),
+        payload.dataset_version or METEOMATICS_DATASET_VERSION,
+        METEOMATICS_METHOD_VERSION,
+        model,
+        geometry,
+        statistical_parameters,
+    )
+
+
+def clear_analysis_cache() -> None:
+    with _ANALYSIS_CACHE_LOCK:
+        _ANALYSIS_CACHE.clear()
 
 
 def _build_analysis_payload(
@@ -35,32 +282,23 @@ def _build_analysis_payload(
     end_date: date,
     dataset_version: str | None = None,
     spatial_query: GeoJSONPoint | None = None,
+    model: str | None = None,
 ) -> AnalysisResponse:
-    variable = get_variable(variable_id)
-    region = get_region(region_id)
-    if variable is None:
-        raise HTTPException(status_code=404, detail="Unknown variable")
-    if region is None:
-        raise HTTPException(status_code=404, detail="Unknown region")
-    if start_date > end_date:
-        raise HTTPException(status_code=422, detail="start_date must be before or equal to end_date")
+    variable, region = _validate_analysis_request(
+        variable_id,
+        region_id,
+        start_date,
+        end_date,
+        dataset_version,
+    )
 
-    if not supported_variable(variable_id):
-        raise HTTPException(
-            status_code=422,
-            detail="No validated Meteomatics parameter is configured for this variable",
-        )
-    if dataset_version and dataset_version != "meteomatics-live":
-        raise HTTPException(
-            status_code=409,
-            detail="The requested dataset_version is not available from the live Meteomatics source",
-        )
     try:
         data = fetch_monthly_series(
             variable_id,
             region,
             start_date,
             end_date,
+            model=model,
             spatial_query=spatial_query.model_dump() if spatial_query else None,
         )
     except MeteomaticsConfigurationError as exc:
@@ -80,7 +318,7 @@ def _build_analysis_payload(
         "type": "Point",
         "coordinates": [data["longitude"], data["latitude"]],
     }
-    effective_version = "meteomatics-live"
+    effective_version = METEOMATICS_DATASET_VERSION
     source = "Meteomatics Weather API"
     product = f"model={data['model']}; parameter={data['parameter']}"
     source_url = METEOMATICS_SOURCE_URL
@@ -113,7 +351,7 @@ def _build_analysis_payload(
             "slope_unit": variable["unit"],
             "confidence_interval": None,
             "p_value": None,
-            "alpha": 0.05,
+            "alpha": ALPHA,
             "significant": None,
             "estimator": "not_applicable",
             "inference_method": "circular_data",
@@ -168,6 +406,35 @@ def _build_analysis_payload(
     return AnalysisResponse.model_validate(payload)
 
 
+def _validate_analysis_request(
+    variable_id: str,
+    region_id: str,
+    start_date: date,
+    end_date: date,
+    dataset_version: str | None = None,
+) -> tuple[dict, dict]:
+    variable = get_variable(variable_id)
+    region = get_region(region_id)
+    if variable is None:
+        raise HTTPException(status_code=404, detail="Unknown variable")
+    if region is None:
+        raise HTTPException(status_code=404, detail="Unknown region")
+    if start_date > end_date:
+        raise HTTPException(status_code=422, detail="start_date must be before or equal to end_date")
+
+    if not supported_variable(variable_id):
+        raise HTTPException(
+            status_code=422,
+            detail="No validated Meteomatics parameter is configured for this variable",
+        )
+    if dataset_version and dataset_version != "meteomatics-live":
+        raise HTTPException(
+            status_code=409,
+            detail="The requested dataset_version is not available from the live Meteomatics source",
+        )
+    return variable, region
+
+
 @app.get("/health")
 @app.get(f"{API_PREFIX}/health")
 def health() -> dict:
@@ -202,6 +469,16 @@ def list_variables() -> list[dict]:
     return records
 
 
+@app.get(f"{API_PREFIX}/nasa/sources")
+def list_nasa_sources() -> list[dict]:
+    return nasa.source_pages()
+
+
+@app.get(f"{API_PREFIX}/nasa/variables", response_model=list[VariableCatalogItem], response_model_by_alias=False)
+def list_nasa_variables() -> list[VariableCatalogItem]:
+    return nasa.catalogue()
+
+
 @app.get(f"{API_PREFIX}/regions")
 def list_regions() -> list[dict]:
     return [RegionCatalogItem.model_validate(item).model_dump(by_alias=True) for item in REGIONS]
@@ -212,6 +489,8 @@ def availability(
     variable_id: str = Query(...),
     region_id: str = Query(...),
 ) -> AvailabilityResponse:
+    if variable_id in nasa.PRODUCTS:
+        return nasa_analysis.availability(variable_id, region_id)
     variable = get_variable(variable_id)
     region = get_region(region_id)
     if variable is None:
@@ -240,28 +519,39 @@ def availability(
 
 
 @app.post(f"{API_PREFIX}/analyses")
-def create_analysis(payload: AnalysisRequest) -> AnalysisResponse:
-    return _build_analysis_payload(
-        payload.variable_id,
-        payload.region_id,
-        payload.start_date,
-        payload.end_date,
-        payload.dataset_version,
-        payload.spatial_query,
-    )
+def create_analysis(payload: AnalysisRequest) -> NasaAnalysisResponse | AnalysisResponse:
+    analysis = _build_limited_analysis(payload)
+    analysis_store.save(analysis)
+    return analysis
+
+
+@app.get(f"{API_PREFIX}/analyses")
+def list_saved_analyses(
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+) -> list[SavedAnalysisSummary]:
+    return analysis_store.recent(limit, offset)
+
+
+@app.get(f"{API_PREFIX}/analyses/{{analysis_id}}")
+def get_saved_analysis(analysis_id: str) -> NasaAnalysisResponse | AnalysisResponse:
+    analysis = analysis_store.get(analysis_id)
+    if analysis is None:
+        raise HTTPException(status_code=404, detail="Saved analysis not found")
+    return analysis
+
+
+@app.get(f"{API_PREFIX}/analyses/{{analysis_id}}/export")
+def export_saved_analysis(analysis_id: str) -> StreamingResponse:
+    return _analysis_csv(get_saved_analysis(analysis_id))
 
 
 @app.post(f"{API_PREFIX}/analyses/export")
 def export_analysis(payload: AnalysisRequest) -> StreamingResponse:
-    analysis = _build_analysis_payload(
-        payload.variable_id,
-        payload.region_id,
-        payload.start_date,
-        payload.end_date,
-        payload.dataset_version,
-        payload.spatial_query,
-    )
+    return _analysis_csv(_build_limited_analysis(payload))
 
+
+def _analysis_csv(analysis: AnalysisResponse) -> StreamingResponse:
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow([
@@ -276,10 +566,10 @@ def export_analysis(payload: AnalysisRequest) -> StreamingResponse:
     ])
     for point in analysis.series:
         writer.writerow([
-            point.timestamp,
+            _safe_csv_text(point.timestamp),
             point.value,
-            point.unit,
-            point.quality_flags,
+            _safe_csv_text(point.unit),
+            _safe_csv_text(point.quality_flags),
             point.coverage_fraction,
             analysis.trend.applicable,
             analysis.trend.direction,
@@ -288,3 +578,9 @@ def export_analysis(payload: AnalysisRequest) -> StreamingResponse:
     response = StreamingResponse(iter([output.getvalue()]), media_type="text/csv")
     response.headers["Content-Disposition"] = "attachment; filename=earth_detective_analysis.csv"
     return response
+
+
+def _safe_csv_text(value: str) -> str:
+    if value.lstrip(" \t\r\n")[:1] in {"=", "+", "-", "@"}:
+        return f"'{value}"
+    return value

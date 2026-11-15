@@ -3,12 +3,15 @@ import {
   exportAnalysisCsv,
   fetchAvailability,
   fetchRegions,
+  fetchSavedAnalyses,
+  fetchSavedAnalysis,
   fetchVariables,
   requestAnalysis,
   type AvailabilityResponse,
   type AnalysisResponse,
   type GeoJSONPoint,
   type RegionRecord,
+  type SavedAnalysisSummary,
   type VariableRecord,
 } from './api/client';
 import RegionMap from './components/RegionMap';
@@ -24,6 +27,13 @@ type ExampleConfig = {
 };
 
 const exampleConfigs: ExampleConfig[] = [
+  {
+    label: 'NASA • Ceará temperature',
+    variableId: 'nasa_power_temperature',
+    regionId: 'ceara',
+    startDate: '2020-01-01',
+    endDate: '2024-12-31',
+  },
   {
     label: 'Example 1 • Ceará warming',
     variableId: 'air_temperature',
@@ -46,14 +56,15 @@ function createChartPath(
   height: number,
   padding: number,
   circular = false,
+  scale?: { min: number; max: number },
 ): string {
   if (!values.some((point) => point.value !== null && Number.isFinite(point.value))) {
     return '';
   }
 
   const valid = values.filter((point) => point.value !== null && Number.isFinite(point.value));
-  const min = circular ? 0 : Math.min(...valid.map((point) => point.value ?? 0));
-  const max = circular ? 360 : Math.max(...valid.map((point) => point.value ?? 0));
+  const min = circular ? 0 : scale?.min ?? Math.min(...valid.map((point) => point.value ?? 0));
+  const max = circular ? 360 : scale?.max ?? Math.max(...valid.map((point) => point.value ?? 0));
   const range = max - min || 1;
   let previousValue: number | null = null;
 
@@ -119,7 +130,23 @@ function App() {
   const [analysis, setAnalysis] = useState<AnalysisResponse | null>(null);
   const [statusMessage, setStatusMessage] = useState('Loading analysis catalog…');
   const [exportMessage, setExportMessage] = useState('');
+  const [savedAnalyses, setSavedAnalyses] = useState<SavedAnalysisSummary[]>([]);
+  const [historyError, setHistoryError] = useState('');
   const requestIdRef = useRef(0);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchSavedAnalyses(controller.signal)
+      .then((items) => {
+        if (controller.signal.aborted) return;
+        setSavedAnalyses(items);
+        setHistoryError('');
+      })
+      .catch((error: Error) => {
+        if (!controller.signal.aborted) setHistoryError(error.message);
+      });
+    return () => controller.abort();
+  }, [analysis?.analysis_id]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -277,6 +304,30 @@ function App() {
       });
   };
 
+  const openSavedAnalysis = async (id: string) => {
+    const requestNumber = ++requestIdRef.current;
+    setStatus('loading');
+    setStatusMessage('Opening saved analysis…');
+    setExportMessage('');
+    try {
+      const result = await fetchSavedAnalysis(id);
+      if (requestNumber !== requestIdRef.current) return;
+      setSelectedVariable(result.variable_id);
+      setSelectedRegion(result.region_id);
+      setSelectedPosition(result.spatial_query ?? null);
+      setStartDate(result.start_date);
+      setEndDate(result.end_date);
+      setAnalysis(result);
+      const hasData = result.chart_points.some((point) => point.value !== null);
+      setStatus(hasData ? 'success' : 'no-data');
+      setStatusMessage(hasData ? 'Saved analysis loaded.' : 'This saved analysis has no valid observations.');
+    } catch (error) {
+      if (requestNumber !== requestIdRef.current) return;
+      setStatus('error');
+      setStatusMessage(error instanceof Error ? error.message : 'Could not open the saved analysis.');
+    }
+  };
+
   const applyExample = (example: ExampleConfig) => {
     setSelectedVariable(example.variableId);
     setSelectedRegion(example.regionId);
@@ -318,17 +369,46 @@ function App() {
 
   const chartWidth = 720;
   const chartHeight = 280;
-  const chartPadding = 28;
+  const chartPadding = 44;
   const monthlySeries = analysis?.chart_points.filter((point) => point.aggregation === 'monthly') ?? [];
   const annualSeries = analysis?.annual_points ?? [];
   const confidenceArea = analysis?.confidence_band ?? [];
 
+  const forecast = analysis?.forecast ?? null;
+  const chartDates = [...new Set([
+    ...monthlySeries.map((point) => point.date),
+    ...(forecast?.points.map((point) => point.timestamp) ?? []),
+  ])].sort();
+  const historicalByDate = new Map(monthlySeries.map((point) => [point.date, point.value]));
+  const projectionByDate = new Map(forecast?.points.map((point) => [point.timestamp, point.value]));
+  const lastObserved = [...monthlySeries].reverse().find((point) => point.value !== null);
+  if (forecast && lastObserved?.value != null) {
+    projectionByDate.set(lastObserved.date, lastObserved.value);
+  }
+  const chartValues = [
+    ...monthlySeries.flatMap((point) => point.value === null ? [] : [point.value]),
+    ...projectionByDate.values(),
+  ];
+  const scale = chartValues.length > 0
+    ? { min: Math.min(...chartValues), max: Math.max(...chartValues) }
+    : undefined;
+  const forecastPath = createChartPath(
+    chartDates.map((date) => ({ date, value: projectionByDate.get(date) ?? null })),
+    chartWidth, chartHeight, chartPadding, false, scale,
+  );
+  const axisScale = activeVariable?.circular ? { min: 0, max: 360 } : scale;
+  const chartTicks = axisScale
+    ? (axisScale.max === axisScale.min
+        ? [axisScale.min]
+        : Array.from({ length: 5 }, (_, index) => axisScale.min + (axisScale.max - axisScale.min) * index / 4))
+    : [];
   const monthlyPath = createChartPath(
-    monthlySeries,
+    chartDates.map((date) => ({ date, value: historicalByDate.get(date) ?? null })),
     chartWidth,
     chartHeight,
     chartPadding,
     activeVariable?.circular ?? false,
+    scale,
   );
   const annualPath = createChartPath(annualSeries, chartWidth, chartHeight, chartPadding);
   const confidencePath = createAreaPath(confidenceArea, chartWidth, chartHeight, chartPadding);
@@ -360,12 +440,38 @@ function App() {
 
       <section className="panel grid-layout" aria-label="Analysis controls">
         <div className="controls-column">
+          {savedAnalyses.length ? (
+            <div className="field-group">
+              <label htmlFor="saved-analysis">Saved analyses</label>
+              <select
+                id="saved-analysis"
+                value={savedAnalyses.some((item) => item.analysis_id === analysis?.analysis_id) ? analysis?.analysis_id : ''}
+                onChange={(event) => {
+                  if (event.target.value) void openSavedAnalysis(event.target.value);
+                }}
+              >
+                <option value="">Open a saved analysis</option>
+                {savedAnalyses.map((item) => (
+                  <option key={item.analysis_id} value={item.analysis_id}>
+                    {item.product} · {regions.find((region) => region.id === item.region_id)?.name ?? item.region_id} · {item.start_date} to {item.end_date}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
+          {historyError ? <p role="status">Saved analyses: {historyError}</p> : null}
           <div className="field-group">
             <label htmlFor="variable">Variable</label>
             <select
               id="variable"
               value={selectedVariable}
-              onChange={(event) => setSelectedVariable(event.target.value)}
+              onChange={(event) => {
+                requestIdRef.current += 1;
+                setSelectedVariable(event.target.value);
+                setAnalysis(null);
+                setStatus('ready');
+                setStatusMessage('Variable selected. Run an analysis to load this series.');
+              }}
             >
               {[...new Set(variables.map((variable) => variable.group))].map((group) => (
                 <optgroup key={group} label={group}>
@@ -539,7 +645,7 @@ function App() {
         <section className="panel result-grid" aria-live="polite">
           <div className="chart-card">
             <div className="section-header">
-              <h2>{activeVariable?.name} at the selected point</h2>
+              <h2>{activeVariable?.id === analysis.variable_id ? activeVariable.name : variables.find((item) => item.id === analysis.variable_id)?.name ?? 'Saved series'} at the selected point</h2>
               <button type="button" className="secondary-button small-button" onClick={() => void handleExport()}>
                 Export CSV
               </button>
@@ -548,6 +654,19 @@ function App() {
 
             <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="trend-chart" role="img" aria-label="Environmental variation chart">
               <g>
+                {chartTicks.map((value, index) => {
+                  const y = chartHeight - chartPadding
+                    - index / Math.max(chartTicks.length - 1, 1) * (chartHeight - 2 * chartPadding);
+                  return (
+                    <g key={index} className="chart-axis-label">
+                      <line x1={chartPadding} y1={y} x2={chartWidth - chartPadding} y2={y} stroke="currentColor" opacity="0.12" />
+                      <text x={chartPadding - 6} y={y} textAnchor="end" dominantBaseline="middle">
+                        {value.toLocaleString(undefined, { notation: 'compact', maximumFractionDigits: 1 })}
+                      </text>
+                    </g>
+                  );
+                })}
+                {analysis.unit ? <text className="chart-axis-label" x={chartPadding} y={chartPadding - 14}>{analysis.unit}</text> : null}
                 <line x1={chartPadding} y1={chartHeight - chartPadding} x2={chartWidth - chartPadding} y2={chartHeight - chartPadding} className="axis-line" />
                 <line x1={chartPadding} y1={chartPadding} x2={chartPadding} y2={chartHeight - chartPadding} className="axis-line" />
               </g>
@@ -555,16 +674,63 @@ function App() {
               {confidenceArea.length > 0 ? <path d={confidencePath} className="confidence-band" /> : null}
               {annualSeries.length > 0 ? <path d={annualPath} className="annual-line" /> : null}
               {monthlySeries.length > 0 ? <path d={monthlyPath} className="monthly-line" /> : null}
+              {forecastPath ? <path d={forecastPath} className="forecast-line" /> : null}
+              {chartDates.length > 0 ? (
+                <g className="chart-axis-label">
+                  <text x={chartPadding} y={chartHeight - 7}>{chartDates[0].slice(0, 7)}</text>
+                  {chartDates.length > 1 ? (
+                    <text x={chartWidth - chartPadding} y={chartHeight - 7} textAnchor="end">
+                      {chartDates[chartDates.length - 1].slice(0, 7)}
+                    </text>
+                  ) : null}
+                </g>
+              ) : null}
             </svg>
 
             <div className="legend" aria-label="Chart legend">
-              <span><i className="legend-dot legend-dot--monthly" /> Monthly observations</span>
-              <span><i className="legend-dot legend-dot--annual" /> Annual mean</span>
-              <span><i className="legend-dot legend-dot--confidence" /> Confidence band</span>
+              <span><i className="legend-dot legend-dot--monthly" /> Historical monthly values</span>
+              {annualSeries.length ? <span><i className="legend-dot legend-dot--annual" /> Annual mean</span> : null}
+              {confidenceArea.length ? <span><i className="legend-dot legend-dot--confidence" /> Confidence band</span> : null}
+              {forecast ? <span><i className="legend-dot legend-dot--forecast" /> Statistical projection</span> : null}
             </div>
+            {forecast ? (
+              <section className="forecast-summary" aria-label="Monthly projection">
+                <h3>Six-month statistical projection</h3>
+                <p>{forecast.method}. The projection starts after the last available month.</p>
+                {forecast.backtest_mae !== null ? (
+                  <p>Historical mean absolute error: {forecast.backtest_mae.toFixed(2)} {analysis.unit} across {forecast.backtest_count} predictions.</p>
+                ) : null}
+                <dl className="forecast-values">
+                  {forecast.points.map((point) => (
+                    <div key={point.timestamp}>
+                      <dt>{point.timestamp.slice(0, 7)}</dt>
+                      <dd>{point.value.toFixed(2)} {analysis.unit}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </section>
+            ) : analysis.statistics ? (
+              <p className="forecast-summary">A projection requires at least three historical values for each projected calendar month.</p>
+            ) : null}
           </div>
 
           <aside className="metric-card">
+            {analysis.statistics ? (
+              <>
+                <h2>Historical statistics</h2>
+                <dl className="metric-list">
+                  <div><dt>Mean</dt><dd>{analysis.statistics.mean.toFixed(2)} {analysis.unit}</dd></div>
+                  <div><dt>Median</dt><dd>{analysis.statistics.median.toFixed(2)} {analysis.unit}</dd></div>
+                  <div>
+                    <dt>Minimum / maximum</dt>
+                    <dd>{analysis.statistics.min.toFixed(2)} / {analysis.statistics.max.toFixed(2)} {analysis.unit}</dd>
+                  </div>
+                  {analysis.statistics.standard_deviation !== null ? (
+                    <div><dt>Standard deviation</dt><dd>{analysis.statistics.standard_deviation.toFixed(2)} {analysis.unit}</dd></div>
+                  ) : null}
+                </dl>
+              </>
+            ) : null}
             <h2>Trend summary</h2>
             <dl className="metric-list">
               <div>

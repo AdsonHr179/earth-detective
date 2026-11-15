@@ -22,6 +22,16 @@ export type RegionRecord = {
   };
 };
 
+export type SavedAnalysisSummary = {
+  analysis_id: string;
+  variable_id: string;
+  region_id: string;
+  product: string;
+  start_date: string;
+  end_date: string;
+  retrieved_at: string;
+};
+
 export type AnalysisRequest = {
   variable_id: string;
   region_id: string;
@@ -56,6 +66,22 @@ export type ConfidenceBandPoint = {
 export type GeoJSONPoint = {
   type: 'Point';
   coordinates: [number, number];
+};
+
+export type DescriptiveStatistics = {
+  count: number;
+  mean: number;
+  median: number;
+  min: number;
+  max: number;
+  standard_deviation: number | null;
+};
+
+export type MonthlyForecast = {
+  method: string;
+  points: Array<{ timestamp: string; value: number }>;
+  backtest_mae: number | null;
+  backtest_count: number;
 };
 
 export type AnalysisResponse = {
@@ -95,6 +121,8 @@ export type AnalysisResponse = {
   chart_points: AnalysisPoint[];
   annual_points: AnalysisPoint[];
   confidence_band: ConfidenceBandPoint[];
+  statistics: DescriptiveStatistics | null;
+  forecast: MonthlyForecast | null;
 };
 
 type BackendAnalysisResponse = {
@@ -135,6 +163,8 @@ type BackendAnalysisResponse = {
     warnings: string[];
   };
   explanation: { summary: string; limitations: string };
+  statistics?: DescriptiveStatistics | null;
+  forecast?: MonthlyForecast | null;
 };
 
 async function getApiError(response: Response): Promise<Error> {
@@ -234,16 +264,25 @@ function adaptBackendAnalysis(result: BackendAnalysisResponse): AnalysisResponse
     chart_points: chartPoints,
     annual_points: [],
     confidence_band: [],
+    statistics: result.statistics ?? null,
+    forecast: result.forecast ?? null,
   };
 }
 
 export async function fetchVariables(signal?: AbortSignal): Promise<VariableRecord[]> {
-  const variables = await requestJson<unknown>('/api/v1/variables', { signal });
-  if (!Array.isArray(variables) || !variables.every(isVariableRecord)) {
-    throw new Error('The variable API response does not match the current catalog schema.');
+  const requests = await Promise.allSettled([
+    requestJson<unknown>('/api/v1/variables', { signal }),
+    requestJson<unknown>('/api/v1/nasa/variables', { signal }),
+  ]);
+  const variables: VariableRecord[] = [];
+  for (const result of requests) {
+    if (result.status === 'fulfilled' && Array.isArray(result.value) && result.value.every(isVariableRecord)) {
+      variables.push(...result.value);
+    }
   }
   if (variables.length === 0) {
-    throw new Error('The backend returned no supported variables.');
+    const failure = requests.find((result) => result.status === 'rejected');
+    throw failure?.reason ?? new Error('The backend returned no supported variables.');
   }
   return variables;
 }
@@ -275,6 +314,15 @@ export async function fetchAvailability(
   return requestJson<AvailabilityResponse>(`/api/v1/availability?${query}`, { signal });
 }
 
+export async function fetchSavedAnalyses(signal?: AbortSignal): Promise<SavedAnalysisSummary[]> {
+  return requestJson<SavedAnalysisSummary[]>('/api/v1/analyses', { signal });
+}
+
+export async function fetchSavedAnalysis(id: string): Promise<AnalysisResponse> {
+  const result = await requestJson<BackendAnalysisResponse>(`/api/v1/analyses/${encodeURIComponent(id)}`);
+  return adaptBackendAnalysis(result);
+}
+
 export async function requestAnalysis(payload: AnalysisRequest): Promise<AnalysisResponse> {
   const result = await requestJson<BackendAnalysisResponse>('/api/v1/analyses', {
     method: 'POST',
@@ -285,19 +333,7 @@ export async function requestAnalysis(payload: AnalysisRequest): Promise<Analysi
 }
 
 export async function exportAnalysisCsv(analysis: AnalysisResponse): Promise<void> {
-  const payload: AnalysisRequest = {
-    variable_id: analysis.variable_id,
-    region_id: analysis.region_id,
-    start_date: analysis.start_date,
-    end_date: analysis.end_date,
-    dataset_version: analysis.dataset_version,
-    spatial_query: analysis.spatial_query,
-  };
-  const response = await fetch('/api/v1/analyses/export', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
+  const response = await fetch(`/api/v1/analyses/${encodeURIComponent(analysis.analysis_id)}/export`);
   if (!response.ok) {
     throw await getApiError(response);
   }

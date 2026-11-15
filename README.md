@@ -48,8 +48,26 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
-The backend uses Meteomatics for analyses and requires server-side credentials.
-It does not generate synthetic analysis values or fall back to mock data.
+The backend supports Meteomatics and NASA monthly sources. Select **NASA • Ceará
+temperature** in the app for a public NASA POWER series derived from MERRA-2.
+IMERG Final V07, the MERRA-2 archive, and GLDAS Noah v2.1 use the original NASA
+GES DISC files. To enable the archives, add `EARTHDATA_TOKEN` to your private
+`.env.local` and authorize **NASA GESDISC DATA ARCHIVE** in Earthdata Login.
+
+NASA analyses use complete calendar months at the nearest grid cell and accept
+up to 120 months at a time. The six-month projection uses the mean of at least
+three historical values for each corresponding calendar month. When earlier
+months can be held out, the app reports the historical mean absolute error.
+The projection starts after the last available observation. CSV export
+contains the historical series. The API also exposes the five source pages
+scraped with Scrapling at `/api/v1/nasa/sources`.
+
+Running an analysis saves the requested series, statistics, projection and
+provenance to the local SQLite database at `data/earth_detective.sqlite3`.
+Set `ANALYSIS_DB_PATH` in the backend environment to use another location.
+Use **Saved analyses** in the app to reopen a saved result. The API lists
+saved analyses at `GET /api/v1/analyses` and returns the original response
+at `GET /api/v1/analyses/{analysis_id}`.
 
 ### Meteomatics connectivity check
 

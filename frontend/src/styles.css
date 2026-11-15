@@ -468,3 +468,41 @@ h1 {
     align-items: flex-start;
   }
 }
+
+
+.forecast-line {
+  fill: none;
+  stroke: #9b500b;
+  stroke-width: 2.5;
+  stroke-dasharray: 6 4;
+}
+
+.legend-dot--forecast {
+  background: #9b500b;
+}
+
+.chart-axis-label {
+  fill: currentColor;
+  font-size: 12px;
+}
+
+.forecast-summary {
+  border-top: 1px solid rgba(110, 125, 143, 0.25);
+  margin-top: 1rem;
+  padding-top: 0.8rem;
+}
+
+.forecast-values {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(95px, 1fr));
+  gap: 0.7rem;
+}
+
+.forecast-values dt {
+  font-size: 0.85rem;
+}
+
+.forecast-values dd {
+  margin: 0;
+  font-weight: 600;
+}
