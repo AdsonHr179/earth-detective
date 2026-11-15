@@ -10,6 +10,7 @@ import {
 export function registerCatalogHandlers() {
   server.use(
     http.get('*/api/v1/variables', () => HttpResponse.json(fixtureVariables)),
+    http.get('*/api/v1/nasa/variables', () => HttpResponse.json([])),
     http.get('*/api/v1/regions', () => HttpResponse.json(fixtureRegions)),
     http.get('*/api/v1/availability', ({ request }) => {
       const url = new URL(request.url);

@@ -110,3 +110,37 @@ export function fixtureBackendAnalysis(
     ...rest,
   };
 }
+
+/** TEST FIXTURE statistics, not real values. */
+export const fixtureStatistics = {
+  count: 3,
+  mean: 2,
+  median: 2,
+  min: 1,
+  max: 3,
+  standard_deviation: 1,
+};
+
+/** TEST FIXTURE projection, not a real forecast. */
+export const fixtureForecast = {
+  method: 'fixture-projection',
+  points: [
+    { timestamp: '2015-04-01', value: 3.5 },
+    { timestamp: '2015-05-01', value: 4 },
+  ],
+  backtest_mae: 0.25,
+  backtest_count: 6,
+};
+
+/** TEST FIXTURE list of saved results. */
+export const fixtureSaved = [
+  {
+    analysis_id: 'saved-1',
+    variable_id: 'air_temperature',
+    region_id: 'ceara',
+    product: 'fixture-product',
+    start_date: '2015-01-01',
+    end_date: '2023-12-31',
+    retrieved_at: '2000-01-02T03:04:05+00:00',
+  },
+];
