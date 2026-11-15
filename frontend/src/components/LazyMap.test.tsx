@@ -29,7 +29,7 @@ describe('LazyMap', () => {
 describe('readMapTheme', () => {
   it('falls back to the token values and styles the selected boundary distinctly', () => {
     const theme = readMapTheme();
-    expect(theme.selectedBoundary.color).toBe('#56b4e9');
+    expect(theme.selectedBoundary.color).toBe('#b266ff');
     expect(theme.pointRing.color).toBe('#f0e442');
     expect(theme.boundary.color).not.toBe(theme.selectedBoundary.color);
   });

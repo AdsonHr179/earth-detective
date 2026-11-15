@@ -2,12 +2,12 @@ import type { PathOptions } from 'leaflet';
 
 /** Fallbacks equal the values in tokens.css, used where CSS custom properties cannot be read (tests). */
 const FALLBACK = {
-  regionFill: '#131d22',
-  regionStroke: '#4a6068',
-  selectedFill: '#21343c',
-  selectedStroke: '#56b4e9',
+  regionFill: '#120a1f',
+  regionStroke: '#5a4a78',
+  selectedFill: '#2a1647',
+  selectedStroke: '#b266ff',
   point: '#f0e442',
-  surface: '#151d21',
+  surface: '#170c24',
 };
 
 function token(styles: CSSStyleDeclaration | null, name: string, fallback: string): string {

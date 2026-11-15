@@ -44,10 +44,11 @@
 }
 
 .finding-number {
+  font-family: var(--font-display);
   font-size: 84px;
   line-height: 1;
   font-weight: 800;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
   color: var(--color-text);
 }
@@ -323,7 +324,7 @@
   height: 14px;
   border-radius: 7px;
   margin: 10px 0;
-  background: linear-gradient(90deg, #2a383e, #3a4a52, #2a383e);
+  background: linear-gradient(90deg, #2a1a40, #3a2558, #2a1a40);
   background-size: 200% 100%;
   animation: shimmer 1.4s linear infinite;
 }
