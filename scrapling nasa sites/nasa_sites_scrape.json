@@ -1,0 +1,171 @@
+{
+  "metadata": {
+    "title": "NASA Earth science sites — scraped metadata snapshot",
+    "language": "pt-BR",
+    "retrieved_on": "2026-11-15",
+    "method": "Extração de conteúdo textual e metadados das páginas públicas indicadas e de páginas oficiais de acesso a dados relacionadas.",
+    "scope": "Páginas de entrada e páginas oficiais diretamente relacionadas a dados e acesso; não é um crawl exaustivo de todos os domínios nem um download dos arquivos científicos.",
+    "page_count": 7,
+    "notes": [
+      "A página inicial Earthdata retornou HTTP 403 ao leitor automatizado. O Earthdata Search, serviço oficial relacionado, foi consultado como alternativa; o conteúdo da página inicial bloqueada não foi inferido.",
+      "Os metadados de produtos podem mudar. Confirme a versão e a cobertura no catálogo de origem antes de análise ou publicação.",
+      "O diretório GPM contém avisos de versão com datas diferentes; as versões abaixo refletem os campos exibidos nas fichas Early, Late e Final do diretório consultado."
+    ]
+  },
+  "pages": [
+    {
+      "site": "NASA GPM",
+      "url": "https://gpm.nasa.gov/data",
+      "status": "accessible",
+      "title": "Data | NASA Global Precipitation Measurement Mission",
+      "page_type": "landing_page",
+      "summary": "Página de orientação para dados de precipitação das missões GPM e TRMM. Apresenta fontes de download e visualização, níveis de processamento, treinamento, tutoriais e perguntas frequentes.",
+      "extracted": {
+        "data_policy": "Os dados GPM/TRMM são disponibilizados gratuitamente ao público.",
+        "recommended_access_services": [
+          "NASA GES DISC",
+          "Giovanni",
+          "STORM",
+          "NASA Precipitation Processing System (PPS)"
+        ],
+        "IMERG_spatial_resolution": "0.1° × 0.1° (aproximadamente 10 km)",
+        "IMERG_temporal_resolution": "30 minutos",
+        "near_real_time_vs_research": "Early e Late são opções de baixa latência; Final é a opção de produção/pesquisa com entradas adicionais."
+      },
+      "related_pages": [
+        "https://gpm.nasa.gov/data/directory",
+        "https://gpm.nasa.gov/data/data-sources",
+        "https://gpm.nasa.gov/data/data-faq"
+      ]
+    },
+    {
+      "site": "NASA GPM",
+      "url": "https://gpm.nasa.gov/data/directory",
+      "status": "accessible",
+      "title": "Precipitation Data Directory",
+      "page_type": "product_catalog",
+      "summary": "Catálogo de produtos GPM/TRMM com descrição, versão do algoritmo, cobertura, latência, resolução, documentação e fontes de acesso.",
+      "extracted": {
+        "products": [
+          {
+            "name": "IMERG Early Run",
+            "algorithm_version_shown": "V07B",
+            "period": "Jan. 1998 – presente",
+            "minimum_latency": "4 horas",
+            "spatial_resolution": "0.1° (aprox. 10 km)",
+            "temporal_resolution": "30 minutos",
+            "variable": "Taxa de precipitação (mm/h) / precipitationCal",
+            "access": ["GES DISC", "PPS Near Real-Time", "Giovanni", "NASA Worldview"],
+            "formats_shown_for_GES_DISC": ["Visualization", "GeoTIFF", "HDF5", "NetCDF", "OPeNDAP"]
+          },
+          {
+            "name": "IMERG Late Run",
+            "algorithm_version_shown": "V07B",
+            "period": "Jan. 1998 – presente",
+            "minimum_latency": "12 horas",
+            "spatial_resolution": "0.1° (aprox. 10 km)",
+            "temporal_resolution": "30 minutos",
+            "variable": "Taxa ou acumulação de precipitação",
+            "access": ["GES DISC", "PPS Near Real-Time", "Giovanni"]
+          },
+          {
+            "name": "IMERG Final Run",
+            "algorithm_version_shown": "V07",
+            "period": "Jan. 1998 – presente",
+            "minimum_latency": "aprox. 3,5 meses",
+            "spatial_resolution": "0.1° (aprox. 10 km)",
+            "temporal_resolution": "30 minutos",
+            "quality_note": "A página recomenda Final para pesquisa; usa ajuste com dados mensais de pluviômetros."
+          }
+        ],
+        "data_access_note": "O diretório indica registro de e-mail para servidores PPS/STORM; o acesso GES DISC oferece opções de subset espacial e temporal."
+      },
+      "source_page": "https://gpm.nasa.gov/data/directory"
+    },
+    {
+      "site": "NASA GMAO MERRA-2",
+      "url": "https://gmao.gsfc.nasa.gov/gmao-products/merra-2/",
+      "status": "accessible",
+      "title": "Modern-Era Retrospective analysis for Research and Applications, Version 2",
+      "page_type": "product_overview",
+      "summary": "Reanálise global do GMAO/NASA que substitui a MERRA original e incorpora observações modernas e avanços no sistema GEOS/GSI.",
+      "extracted": {
+        "period_start": "1980",
+        "spatial_resolution": "aproximadamente 50 km na direção latitudinal",
+        "coverage": "global",
+        "notable_features": [
+          "Assimila radiâncias hiperespectrais, observações de micro-ondas e dados de ocultação de rádio GPS.",
+          "Assimila observações de perfil de ozônio da NASA disponíveis desde o fim de 2004.",
+          "É descrita como a primeira reanálise global de longo prazo a assimilar observações espaciais de aerossóis e representar suas interações com outros processos físicos.",
+          "Representa mantos de gelo, incluindo Groenlândia e Antártida."
+        ],
+        "data_access": "NASA GES DISC",
+        "citation": "Cada coleção MERRA-2 tem DOI próprio; a página de citação pede citar o DOI da coleção usada."
+      },
+      "related_pages": [
+        "https://gmao.gsfc.nasa.gov/gmao-products/merra-2/data-access_merra-2/",
+        "https://gmao.gsfc.nasa.gov/gmao-products/merra-2/citing-merra-2-data_merra-2/",
+        "https://gmao.gsfc.nasa.gov/gmao-products/merra-2/documentation_merra-2/"
+      ]
+    },
+    {
+      "site": "NASA GMAO MERRA-2",
+      "url": "https://gmao.gsfc.nasa.gov/gmao-products/merra-2/data-access_merra-2/",
+      "status": "accessible",
+      "title": "MERRA-2 Data Access",
+      "page_type": "data_access",
+      "summary": "A página do produto direciona o acesso e download MERRA-2 ao NASA GES DISC e também aponta uma ferramenta de visualização do GMAO.",
+      "extracted": {
+        "primary_archive": "NASA Goddard Earth Sciences Data and Information Services Center (GES DISC)",
+        "visualization": "GMAO MERRA-2 Visualization",
+        "programmatic_access_note": "Arquivos também são disponibilizados em caminho interno para usuários com acesso às instalações computacionais NCCS."
+      }
+    },
+    {
+      "site": "NASA GLDAS / LDAS",
+      "url": "https://ldas.gsfc.nasa.gov/gldas",
+      "status": "accessible",
+      "title": "GLDAS: Project Goals | LDAS",
+      "page_type": "project_overview_and_access",
+      "summary": "GLDAS integra observações de satélite e de superfície com modelos de superfície terrestre e técnicas de assimilação para gerar campos de estados e fluxos terrestres.",
+      "extracted": {
+        "models_named": ["Noah", "CLM", "VIC", "Mosaic", "Catchment"],
+        "simulation_period": "1948–presente",
+        "resolutions_reported": ["1°", "0.25°"],
+        "system_capability": "O texto do projeto também descreve execução global em resoluções de 2.5° a 1 km; isso é uma capacidade da infraestrutura/modelagem, não a resolução dos produtos listados no arquivo.",
+        "data_archive": "NASA GES DISC",
+        "access_methods": ["HTTPS", "GDS", "subset espacial", "subset temporal", "subset por variável", "Giovanni"],
+        "Giovanni_export_formats": ["NetCDF", "GeoTIFF", "KMZ"],
+        "related_collections": ["GLDAS", "NLDAS", "NCA-LDAS", "FLDAS", "WLDAS"]
+      },
+      "related_pages": [
+        "https://disc.gsfc.nasa.gov/datasets?keywords=GLDAS",
+        "https://giovanni.gsfc.nasa.gov/giovanni/"
+      ]
+    },
+    {
+      "site": "NASA Earthdata",
+      "url": "https://www.earthdata.nasa.gov/",
+      "status": "blocked_by_source",
+      "http_result": "403 Forbidden",
+      "title": null,
+      "summary": "A página inicial indicada não pôde ser lida pelo coletor automatizado nesta consulta. Nenhum conteúdo foi inferido para essa URL.",
+      "fallback_page": "https://search.earthdata.nasa.gov/"
+    },
+    {
+      "site": "NASA Earthdata Search",
+      "url": "https://search.earthdata.nasa.gov/",
+      "status": "accessible",
+      "title": "Earthdata Search",
+      "page_type": "catalog_and_search_portal",
+      "summary": "Portal de busca para descoberta de observações da Terra da NASA, com filtros por palavras-chave, espaço e tempo, além de navegação por tópicos e portais.",
+      "extracted": {
+        "catalog_size_claim_shown": "2.2 bilhões+ de observações da Terra",
+        "search_facets": ["palavras-chave", "área espacial", "período", "tópico", "portal/DAAC"],
+        "topics_shown": ["Atmosphere", "Biosphere", "Climate Indicators", "Cryosphere", "Human Dimensions", "Land Surface", "Oceans", "Solid Earth", "Sun-Earth Interactions", "Terrestrial Hydrosphere"],
+        "purpose": "Descobrir, visualizar, refinar e acessar conjuntos de dados de observação da Terra mantidos pelos DAACs da NASA."
+      },
+      "source_page": "https://search.earthdata.nasa.gov/"
+    }
+  ]
+}
