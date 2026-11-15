@@ -130,6 +130,13 @@ export default function TrendChart({
   const line = trend.applicable ? trendLine(selectedPoints, trend.rate_per_decade, scales) : null;
   const last = lastValidPoint(points, startMs, endMs);
   const { plot } = scales;
+  // The projection label goes on the side of its line end that is away from the last observation's label.
+  let forecastLabelY = 0;
+  if (forecastEnd) {
+    const wantAbove = last ? forecastEnd.y < scales.y(last.value) : true;
+    const above = wantAbove ? forecastEnd.y - 10 >= plot.top + 4 : forecastEnd.y + 20 > plot.bottom - 4;
+    forecastLabelY = above ? forecastEnd.y - 10 : forecastEnd.y + 20;
+  }
 
   const hatchId = `${reactId}-hatch`;
   const titleId = `${reactId}-title`;
@@ -283,7 +290,7 @@ export default function TrendChart({
               ))}
               <text
                 x={Math.min(forecastEnd.x, plot.right)}
-                y={forecastEnd.y + (forecastEnd.y > plot.top + 22 ? -10 : 20)}
+                y={forecastLabelY}
                 textAnchor="end"
                 className="chart-label chart-halo chart-label--forecast"
               >
