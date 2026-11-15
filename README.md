@@ -117,6 +117,14 @@ npm install
 npm run dev
 ```
 
+The Vite development server proxies `/api` to `http://127.0.0.1:8000` by
+default. Set `BACKEND_URL` in the frontend environment to use a different
+backend URL. For a separately hosted frontend, set `VITE_API_BASE_URL` to the
+backend's public base URL at build time and set `CORS_ORIGINS` in the backend
+environment to the exact frontend origin(s), separated by commas. Leave
+`VITE_API_BASE_URL` unset when frontend and API are exposed under the same
+origin.
+
 ## Current status
 
 The backend queries Meteomatics for its configured environmental variables and

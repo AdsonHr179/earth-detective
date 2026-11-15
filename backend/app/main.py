@@ -13,6 +13,7 @@ from datetime import date
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, StreamingResponse
+from starlette.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.config import (
@@ -21,6 +22,7 @@ from app.config import (
     ANALYSIS_CACHE_TTL_SECONDS,
     APP_NAME,
     APP_VERSION,
+    CORS_ORIGINS,
     DATA_SOURCE,
     MAX_CONCURRENT_ANALYSES,
     MAX_REQUEST_BODY_BYTES,
@@ -55,6 +57,12 @@ from app.science.trend import (
 )
 
 app = FastAPI(title=APP_NAME, version=APP_VERSION)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=list(CORS_ORIGINS),
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
+)
 logger = logging.getLogger(__name__)
 _ANALYSIS_SEMAPHORE = threading.BoundedSemaphore(MAX_CONCURRENT_ANALYSES)
 _ANALYSIS_CACHE: OrderedDict[tuple, tuple[float, AnalysisResponse]] = OrderedDict()

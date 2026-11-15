@@ -125,6 +125,12 @@ export type AnalysisResponse = {
   forecast: MonthlyForecast | null;
 };
 
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/+$/, '');
+
+function apiUrl(path: string): string {
+  return `${API_BASE_URL}${path}`;
+}
+
 type BackendAnalysisResponse = {
   analysis_id: string;
   dataset_version: string;
@@ -189,7 +195,7 @@ async function getApiError(response: Response): Promise<Error> {
 }
 
 async function requestJson<T>(input: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(input, init);
+  const response = await fetch(apiUrl(input), init);
   if (!response.ok) {
     throw await getApiError(response);
   }
@@ -333,7 +339,7 @@ export async function requestAnalysis(payload: AnalysisRequest): Promise<Analysi
 }
 
 export async function exportAnalysisCsv(analysis: AnalysisResponse): Promise<void> {
-  const response = await fetch(`/api/v1/analyses/${encodeURIComponent(analysis.analysis_id)}/export`);
+  const response = await fetch(apiUrl(`/api/v1/analyses/${encodeURIComponent(analysis.analysis_id)}/export`));
   if (!response.ok) {
     throw await getApiError(response);
   }
