@@ -1,0 +1,88 @@
+{
+  "analysis_id": "synthetic-fixture-unsupported",
+  "schema_version": "1.0",
+  "dataset_version": "meteomatics-live",
+  "method_version": "meteomatics-hourly-monthly-v3",
+  "variable_id": "wind_direction_10m",
+  "region_id": "ceara",
+  "requested_period": {
+    "start_date": "2020-01-01",
+    "end_date": "2020-02-29"
+  },
+  "effective_period": {
+    "start_date": "2020-01-01",
+    "end_date": "2020-02-29"
+  },
+  "source": "Meteomatics Weather API",
+  "product": "model=mix; parameter=wind_dir_10m:d",
+  "source_url": "https://www.meteomatics.com/en/api/getting-started/",
+  "retrieved_at": "2020-05-01T00:00:00+00:00",
+  "region_version": "selected-point-v1",
+  "spatial_query": {
+    "type": "Point",
+    "coordinates": [
+      -39.5,
+      -5.2
+    ]
+  },
+  "series": [
+    {
+      "timestamp": "2020-01-01",
+      "value": 359.0,
+      "unit": "°",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2020-02-01",
+      "value": 1.0,
+      "unit": "°",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    }
+  ],
+  "analysis_series": [
+    {
+      "timestamp": "2020-01-01",
+      "value": 359.0,
+      "unit": "°",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2020-02-01",
+      "value": 1.0,
+      "unit": "°",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    }
+  ],
+  "trend": {
+    "direction": "undetermined",
+    "applicable": false,
+    "slope_per_decade": null,
+    "slope_unit": "° per decade",
+    "confidence_interval": null,
+    "p_value": null,
+    "alpha": 0.05,
+    "estimator": "not_applicable",
+    "inference_method": "circular_data",
+    "significant": null,
+    "inference_status": "unsupported",
+    "inference_reason": "A linear fit is unavailable for circular wind direction."
+  },
+  "quality": {
+    "sample_count": 2,
+    "expected_count": 2,
+    "coverage_fraction": 1,
+    "hourly_coverage_fraction": 1,
+    "warnings": [
+      "Synthetic test fixture."
+    ],
+    "aggregation": "circular_mean"
+  },
+  "explanation": {
+    "summary": "Wind direction at 10 m at the selected point near Ceará. A linear fit is unavailable for circular wind direction.",
+    "limitations": "Values are hourly model output aggregated to complete calendar months at the selected point, not an area-weighted regional average. The live provider response is not an immutable archived dataset, and trend inference has not been validated for the selected Meteomatics product."
+  }
+}

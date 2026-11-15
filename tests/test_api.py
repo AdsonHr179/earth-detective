@@ -11,7 +11,8 @@ client = TestClient(app)
 
 
 @pytest.fixture(autouse=True)
-def clear_analysis_cache():
+def clear_analysis_cache(monkeypatch):
+    monkeypatch.setenv("ENABLE_UNVERIFIED_PROVIDERS", "1")
     main.clear_analysis_cache()
     yield
     main.clear_analysis_cache()
@@ -62,7 +63,7 @@ def test_health_endpoint():
     response = client.get('/health')
     assert response.status_code == 200
     assert response.json()['status'] == 'ok'
-    assert response.json()['data_source'] == 'meteomatics'
+    assert response.json()['data_source'] == 'nasa-power'
 
 
 def test_variables_endpoint():
