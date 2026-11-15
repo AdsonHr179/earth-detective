@@ -1,19 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   exportAnalysisCsv,
   fetchAvailability,
   fetchRegions,
   fetchVariables,
-  requestAnalysis,
   type AvailabilityResponse,
-  type AnalysisResponse,
-  type GeoJSONPoint,
   type RegionRecord,
   type VariableRecord,
 } from './api/client';
 import RegionMap from './components/RegionMap';
-
-type LoadState = 'loading' | 'ready' | 'error' | 'success' | 'no-data';
+import { DEFAULT_FILTERS, STALE_NOTICE, useAnalysis } from './hooks/useAnalysis';
 
 type ExampleConfig = {
   label: string;
@@ -107,19 +103,50 @@ function createAreaPath(values: Array<{ date: string; low: number; high: number 
 function App() {
   const [variables, setVariables] = useState<VariableRecord[]>([]);
   const [regions, setRegions] = useState<RegionRecord[]>([]);
-  const [selectedVariable, setSelectedVariable] = useState('air_temperature');
-  const [selectedRegion, setSelectedRegion] = useState('ceara');
-  const [selectedPosition, setSelectedPosition] = useState<GeoJSONPoint | null>(null);
-  const [startDate, setStartDate] = useState('2015-01-01');
-  const [endDate, setEndDate] = useState('2023-12-31');
   const [availability, setAvailability] = useState<AvailabilityResponse | null>(null);
   const [availabilityState, setAvailabilityState] = useState<'loading' | 'ready' | 'error'>('loading');
   const [availabilityError, setAvailabilityError] = useState('');
-  const [status, setStatus] = useState<LoadState>('loading');
-  const [analysis, setAnalysis] = useState<AnalysisResponse | null>(null);
-  const [statusMessage, setStatusMessage] = useState('Loading analysis catalog…');
+  const [catalogError, setCatalogError] = useState('');
+  const [catalogMessage, setCatalogMessage] = useState('Loading analysis catalog…');
   const [exportMessage, setExportMessage] = useState('');
-  const requestIdRef = useRef(0);
+
+  const defaults = useMemo(
+    () => ({
+      ...DEFAULT_FILTERS,
+      variableId: variables.some((item) => item.id === DEFAULT_FILTERS.variableId)
+        ? DEFAULT_FILTERS.variableId
+        : (variables[0]?.id ?? DEFAULT_FILTERS.variableId),
+      regionId: regions.some((item) => item.id === DEFAULT_FILTERS.regionId)
+        ? DEFAULT_FILTERS.regionId
+        : (regions[0]?.id ?? DEFAULT_FILTERS.regionId),
+    }),
+    [variables, regions],
+  );
+
+  const {
+    filters,
+    status,
+    analysis,
+    resultKind,
+    isStale,
+    message: analysisMessage,
+    canRetry,
+    setVariable,
+    setRegion,
+    setPoint,
+    setStartDate,
+    setEndDate,
+    updateFilters,
+    run,
+    retry,
+    reset,
+  } = useAnalysis({ regions, availability, defaults });
+  const selectedVariable = filters.variableId;
+  const selectedRegion = filters.regionId;
+  const selectedPosition = filters.point;
+  const startDate = filters.startDate;
+  const endDate = filters.endDate;
+  const statusMessage = analysisMessage || catalogMessage;
 
   useEffect(() => {
     const controller = new AbortController();
@@ -129,25 +156,28 @@ function App() {
         if (controller.signal.aborted) return;
         setVariables(fetchedVariables);
         setRegions(fetchedRegions);
-        if (!fetchedVariables.some((variable) => variable.id === selectedVariable)) {
-          setSelectedVariable(fetchedVariables[0].id);
-        }
-        if (!fetchedRegions.some((region) => region.id === selectedRegion) && fetchedRegions[0]) {
-          setSelectedRegion(fetchedRegions[0].id);
-        }
-        setStatus('ready');
-        setStatusMessage('Catalog ready. Choose a filter and run an analysis.');
+        updateFilters((current) => ({
+          ...current,
+          variableId: fetchedVariables.some((variable) => variable.id === current.variableId)
+            ? current.variableId
+            : fetchedVariables[0].id,
+          regionId:
+            fetchedRegions.some((region) => region.id === current.regionId) || !fetchedRegions[0]
+              ? current.regionId
+              : fetchedRegions[0].id,
+        }));
+        setCatalogMessage('Catalog ready. Choose a filter and run an analysis.');
       })
       .catch((error: Error) => {
         if (controller.signal.aborted) return;
-        setStatus('error');
-        setStatusMessage(`Catalog API request failed: ${error.message}`);
+        setCatalogError(`Catalog API request failed: ${error.message}`);
+        setCatalogMessage(`Catalog API request failed: ${error.message}`);
       });
 
     return () => {
       controller.abort();
     };
-  }, []);
+  }, [updateFilters]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -182,127 +212,28 @@ function App() {
     [selectedRegion, regions],
   );
 
+  const resultVariable = useMemo(
+    () => variables.find((item) => item.id === analysis?.variable_id),
+    [analysis, variables],
+  );
+
+  useEffect(() => {
+    setExportMessage('');
+  }, [analysis]);
+
   const selectedAvailability =
     availability?.variable_id === selectedVariable && availability.region_id === selectedRegion
       ? availability
       : null;
 
-  const runAnalysis = (
-    nextVariable = selectedVariable,
-    nextRegion = selectedRegion,
-    nextStartDate = startDate,
-    nextEndDate = endDate,
-    nextPosition: GeoJSONPoint | null = selectedPosition,
-  ) => {
-    if (!nextStartDate || !nextEndDate || nextStartDate > nextEndDate) {
-      setStatus('error');
-      setStatusMessage('Choose a valid date range before running the analysis.');
-      setAnalysis(null);
-      return;
-    }
-
-    const requestAvailability =
-      availability?.variable_id === nextVariable && availability.region_id === nextRegion
-        ? availability
-        : null;
-    if (requestAvailability?.available === false) {
-      setStatus('error');
-      setStatusMessage(requestAvailability.warning ?? 'The backend reports no data for this selection.');
-      setAnalysis(null);
-      return;
-    }
-    if (
-      (requestAvailability?.start_date && nextStartDate < requestAvailability.start_date) ||
-      (requestAvailability?.end_date && nextEndDate > requestAvailability.end_date)
-    ) {
-      setStatus('error');
-      setStatusMessage(
-        `Selected dates are outside backend availability (${requestAvailability.start_date ?? 'open'} to ${requestAvailability.end_date ?? 'open'}).`,
-      );
-      setAnalysis(null);
-      return;
-    }
-
-    const requestNumber = requestIdRef.current + 1;
-    requestIdRef.current = requestNumber;
-    const requestRegion = regions.find((region) => region.id === nextRegion);
-    if (!requestRegion) {
-      setStatus('error');
-      setStatusMessage('Select a region from the backend catalog before running an analysis.');
-      setAnalysis(null);
-      return;
-    }
-    const queryPoint = nextPosition ?? {
-      type: 'Point' as const,
-      coordinates: [requestRegion.center.longitude, requestRegion.center.latitude] as [number, number],
-    };
-    setStatus('loading');
-    setStatusMessage('Running the selected analysis…');
-    setExportMessage('');
-    setAnalysis(null);
-
-    requestAnalysis({
-      variable_id: nextVariable,
-      region_id: nextRegion,
-      start_date: nextStartDate,
-      end_date: nextEndDate,
-      dataset_version: requestAvailability?.active_version ?? null,
-      spatial_query: queryPoint,
-    })
-      .then((result) => {
-        if (requestNumber !== requestIdRef.current) {
-          return;
-        }
-
-        if (!(result.chart_points ?? []).some((point) => point.value !== null)) {
-          setStatus('no-data');
-          setStatusMessage('No valid observations are available for the selected filters.');
-          setAnalysis(result);
-          setSelectedPosition(result.spatial_query ?? queryPoint);
-          return;
-        }
-
-        setAnalysis(result);
-        setSelectedPosition(result.spatial_query ?? queryPoint);
-        setStatus('success');
-        setStatusMessage('Analysis complete. Review the trend, confidence band, and limitations.');
-      })
-      .catch((error: Error) => {
-        if (requestNumber !== requestIdRef.current) {
-          return;
-        }
-
-        setStatus('error');
-        setStatusMessage(error instanceof Error ? error.message : 'The analysis could not be completed.');
-      });
-  };
-
   const applyExample = (example: ExampleConfig) => {
-    setSelectedVariable(example.variableId);
-    setSelectedRegion(example.regionId);
-    setSelectedPosition(null);
-    setStartDate(example.startDate);
-    setEndDate(example.endDate);
-    runAnalysis(example.variableId, example.regionId, example.startDate, example.endDate, null);
-  };
-
-  const selectRegion = (regionId: string) => {
-    requestIdRef.current += 1;
-    setSelectedRegion(regionId);
-    setSelectedPosition(null);
-    setAnalysis(null);
-    setStatus('ready');
-    setStatusMessage('Region selected. Click the map to choose an analysis position.');
-  };
-
-  const selectPosition = (position: GeoJSONPoint) => {
-    requestIdRef.current += 1;
-    setSelectedPosition(position);
-    setAnalysis(null);
-    setStatus('ready');
-    setStatusMessage(
-      `Position selected: ${position.coordinates[1].toFixed(4)}°, ${position.coordinates[0].toFixed(4)}°. Run an analysis to query this point.`,
-    );
+    run({
+      variableId: example.variableId,
+      regionId: example.regionId,
+      point: null,
+      startDate: example.startDate,
+      endDate: example.endDate,
+    });
   };
 
   const handleExport = async () => {
@@ -328,7 +259,7 @@ function App() {
     chartWidth,
     chartHeight,
     chartPadding,
-    activeVariable?.circular ?? false,
+    resultVariable?.circular ?? false,
   );
   const annualPath = createChartPath(annualSeries, chartWidth, chartHeight, chartPadding);
   const confidencePath = createAreaPath(confidenceArea, chartWidth, chartHeight, chartPadding);
@@ -365,7 +296,7 @@ function App() {
             <select
               id="variable"
               value={selectedVariable}
-              onChange={(event) => setSelectedVariable(event.target.value)}
+              onChange={(event) => setVariable(event.target.value)}
             >
               {[...new Set(variables.map((variable) => variable.group))].map((group) => (
                 <optgroup key={group} label={group}>
@@ -428,12 +359,12 @@ function App() {
             <button
               type="button"
               className="primary-button"
-              onClick={() => runAnalysis()}
+              onClick={() => run()}
               disabled={availabilityState === 'loading' || selectedAvailability?.available === false}
             >
               Run analysis
             </button>
-            <button type="button" className="ghost-button" onClick={() => setStatusMessage('Filters reset to the default analysis window.') }>
+            <button type="button" className="ghost-button" onClick={() => { setExportMessage(''); reset(); }}>
               Reset
             </button>
           </div>
@@ -475,7 +406,7 @@ function App() {
             regions={regions}
             selectedRegion={selectedRegion}
             selectedPosition={selectedPosition}
-            onSelectPosition={selectPosition}
+            onSelectPosition={setPoint}
           />
 
           <div className="region-list" role="list" aria-label="Regions">
@@ -484,7 +415,7 @@ function App() {
                 key={region.id}
                 type="button"
                 className={selectedRegion === region.id ? 'selected-region' : ''}
-                onClick={() => selectRegion(region.id)}
+                onClick={() => setRegion(region.id)}
                 aria-pressed={selectedRegion === region.id}
               >
                 {region.name}
@@ -514,10 +445,21 @@ function App() {
         <strong>Status:</strong> <span>{statusMessage}</span>
       </section>
 
-      {status === 'error' ? (
+      {status === 'error' || catalogError ? (
         <section className="panel result-empty" role="alert">
           <h2>Unable to complete the request</h2>
-          <p>{statusMessage}</p>
+          <p>{status === 'error' ? analysisMessage : catalogError}</p>
+          {status === 'error' && canRetry ? (
+            <button type="button" className="secondary-button small-button" onClick={retry}>
+              Try again
+            </button>
+          ) : null}
+        </section>
+      ) : null}
+
+      {isStale ? (
+        <section className="panel result-empty" role="status">
+          <p>{STALE_NOTICE}</p>
         </section>
       ) : null}
 
@@ -528,18 +470,18 @@ function App() {
         </section>
       ) : null}
 
-      {status === 'no-data' ? (
+      {resultKind === 'no-data' && (status === 'no-data' || status === 'stale') ? (
         <section className="panel result-empty" role="status">
           <h2>No valid series</h2>
           <p>The selected filters do not produce a valid observation record.</p>
         </section>
       ) : null}
 
-      {status === 'success' && analysis ? (
+      {resultKind === 'success' && (status === 'success' || status === 'stale') && analysis ? (
         <section className="panel result-grid" aria-live="polite">
           <div className="chart-card">
             <div className="section-header">
-              <h2>{activeVariable?.name} at the selected point</h2>
+              <h2>{resultVariable?.name ?? analysis.variable_id} at the selected point</h2>
               <button type="button" className="secondary-button small-button" onClick={() => void handleExport()}>
                 Export CSV
               </button>
@@ -625,7 +567,7 @@ function App() {
         </section>
       ) : null}
 
-      {status === 'success' && analysis ? (
+      {resultKind === 'success' && (status === 'success' || status === 'stale') && analysis ? (
         <section className="panel metadata-grid" aria-label="Analysis metadata">
           <div>
             <h3>Provenance</h3>
