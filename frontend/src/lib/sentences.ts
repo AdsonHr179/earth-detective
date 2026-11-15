@@ -1,6 +1,8 @@
 import { formatSigned } from './format';
 
 export type TrendFields = {
+  inference_status?: 'validated' | 'descriptive' | 'insufficient_data' | 'unsupported' | 'legacy';
+  slope_unit?: string;
   direction: 'increasing' | 'decreasing' | 'stable' | 'undetermined';
   applicable: boolean;
   significant: boolean | null;
@@ -19,13 +21,18 @@ export const NOT_APPLICABLE_SENTENCE =
  * (direction, significant, applicable). It adds no causal claim and no number of its own.
  */
 export function trendSentence(trend: TrendFields, subject: string): string {
+  if (trend.inference_status === 'insufficient_data') return 'A trend cannot be estimated from the available observations for this period.';
   if (!trend.applicable) return NOT_APPLICABLE_SENTENCE;
-  if (trend.direction === 'undetermined' || trend.rate_per_decade === null) return INCONCLUSIVE_SENTENCE;
-  if (trend.direction === 'stable') {
+  if (trend.rate_per_decade === null) return INCONCLUSIVE_SENTENCE;
+  if (trend.inference_status !== 'validated') {
+    const way = trend.rate_per_decade > 0 ? 'upward' : trend.rate_per_decade < 0 ? 'downward' : 'flat';
+    return `The descriptive slope for ${subject} is ${way}. Statistical inference has not been validated for this analysis.`;
+  }
+  if (trend.direction === 'stable' && trend.rate_per_decade === 0) {
     return `The fitted slope for ${subject} is essentially flat over this period. This describes this point and period only.`;
   }
 
-  const way = trend.direction === 'increasing' ? 'upward' : 'downward';
+  const way = trend.rate_per_decade >= 0 ? 'upward' : 'downward';
   if (trend.significant === null) {
     return `The estimated slope for ${subject} is ${way}, but the service did not report a significance test, so treat it as unconfirmed.`;
   }
@@ -33,7 +40,7 @@ export function trendSentence(trend: TrendFields, subject: string): string {
     const article = way === 'upward' ? 'an' : 'a';
     return `${subject} shows ${article} ${way} trend that is statistically significant at α = ${trend.alpha}.`;
   }
-  return `${subject} leans ${way}, but this is not statistically significant at α = ${trend.alpha}, so it could be natural variation.`;
+  return `${subject} leans ${way}, but this is not statistically significant at α = ${trend.alpha}. This does not establish stability or a cause.`;
 }
 
 export type Headline = {
@@ -49,24 +56,28 @@ export type Headline = {
 
 /** The big number: the reported rate per decade with its unit, or an honest dash. */
 export function headlineNumber(trend: TrendFields, unit: string): Headline {
+  if (trend.inference_status === 'insufficient_data') {
+    return { value: '—', unit: '', hasNumber: false, weak: true, spoken: 'No trend estimate' };
+  }
   if (!trend.applicable) {
     return { value: '—', unit: '', hasNumber: false, weak: true, spoken: 'No rate per decade for this variable' };
   }
-  if (trend.rate_per_decade === null || trend.direction === 'undetermined') {
+  if (trend.rate_per_decade === null) {
     return { value: '—', unit: '', hasNumber: false, weak: true, spoken: 'No trend estimate' };
   }
   const value = formatSigned(trend.rate_per_decade);
+  const slopeUnit = trend.slope_unit || `${unit} per decade`;
   return {
     value,
-    unit: `${unit} per decade`,
+    unit: slopeUnit,
     hasNumber: true,
-    weak: trend.significant !== true,
-    spoken: `${value} ${unit} per decade`,
+    weak: trend.inference_status !== 'validated' || trend.significant !== true,
+    spoken: `${value} ${slopeUnit}`,
   };
 }
 
 /** The confidence interval of the slope, as text, or null when the backend gave none. */
-export function formatInterval(interval: [number, number] | null, unit: string): string | null {
+export function formatInterval(interval: [number, number] | null, unit: string, completeUnit = false): string | null {
   if (!interval) return null;
-  return `${formatSigned(interval[0])} to ${formatSigned(interval[1])} ${unit} per decade`;
+  return `${formatSigned(interval[0])} to ${formatSigned(interval[1])} ${completeUnit ? unit : `${unit} per decade`}`;
 }

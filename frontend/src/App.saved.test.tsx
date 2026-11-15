@@ -111,7 +111,7 @@ describe('Saved analyses list', () => {
     expect(await screen.findByRole('heading', { name: 'Air temperature (TEST FIXTURE) at the selected point' })).toBeInTheDocument();
     expect(opened).toHaveBeenCalledWith('saved-1');
     expect(screen.getByRole('region', { name: 'Descriptive statistics' })).toBeInTheDocument();
-    expect(screen.getByText('Exploratory projection (not an official forecast)')).toBeInTheDocument();
+    expect(screen.queryByText('Exploratory projection (not an official forecast)')).not.toBeInTheDocument();
     expect(screen.queryByText('Out of date')).not.toBeInTheDocument();
   });
 
@@ -131,6 +131,34 @@ describe('Saved analyses list', () => {
     expect(alert).toHaveTextContent('We could not get the data');
     expect(alert).toHaveTextContent('Saved analysis not found');
     expect(screen.queryByText(/per decade/)).not.toBeInTheDocument();
+  });
+
+  it('retries opening the same saved id without creating a new analysis', async () => {
+    const opened: string[] = [];
+    const created = vi.fn();
+    server.use(
+      http.get('*/api/v1/analyses', () => HttpResponse.json(fixtureSaved)),
+      http.get('*/api/v1/analyses/:id', ({ params }) => {
+        opened.push(String(params.id));
+        return opened.length === 1
+          ? HttpResponse.json({ detail: 'Temporary saved-analysis failure' }, { status: 503 })
+          : HttpResponse.json(fixtureBackendAnalysis({ analysis_id: String(params.id) }));
+      }),
+      http.post('*/api/v1/analyses', () => {
+        created();
+        return HttpResponse.json(fixtureBackendAnalysis({ analysis_id: 'unexpected-new-analysis' }));
+      }),
+    );
+    const { user } = await renderApp();
+
+    await user.click(savedChip());
+    await user.click(await screen.findByRole('button', { name: /Air temperature \(TEST FIXTURE\) · Ceará/ }));
+    const alert = await screen.findByRole('alert');
+    await user.click(within(alert).getByRole('button', { name: 'Try again' }));
+
+    expect(await screen.findByRole('heading', { name: 'Air temperature (TEST FIXTURE) at the selected point' })).toBeInTheDocument();
+    expect(opened).toEqual(['saved-1', 'saved-1']);
+    expect(created).not.toHaveBeenCalled();
   });
 });
 

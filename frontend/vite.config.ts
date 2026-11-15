@@ -11,6 +11,9 @@ export default defineConfig({
     },
   },
   test: {
+    // Bound memory use on contributor machines and CI; suites remain isolated.
+    maxWorkers: 2,
+    minWorkers: 1,
     environment: 'jsdom',
     setupFiles: ['src/test/setup.ts'],
     globals: false,

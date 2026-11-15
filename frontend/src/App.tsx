@@ -30,6 +30,7 @@ function App() {
   const { variables, regions } = catalog;
   const [availability, setAvailability] = useState<AvailabilityResponse | null>(null);
   const [availabilityState, setAvailabilityState] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [availabilityError, setAvailabilityError] = useState('');
   const compact = useMediaQuery(COMPACT_QUERY);
   const [sheetExpanded, setSheetExpanded] = useState(true);
 
@@ -85,6 +86,7 @@ function App() {
     const controller = new AbortController();
     setAvailability(null);
     setAvailabilityState('loading');
+    setAvailabilityError('');
 
     fetchAvailability(filters.variableId, filters.regionId, controller.signal)
       .then((result) => {
@@ -92,8 +94,9 @@ function App() {
         setAvailability(result);
         setAvailabilityState('ready');
       })
-      .catch(() => {
+      .catch((failure: unknown) => {
         if (controller.signal.aborted) return;
+        setAvailabilityError(failure instanceof Error ? failure.message : 'The availability request failed.');
         setAvailabilityState('error');
       });
 
@@ -169,24 +172,27 @@ function App() {
   } else {
     resultView = (
       <ReadyState selection={selectionText}>
-        {unavailable ? (
-          <UnavailableState message={selectedAvailability?.warning ?? 'The backend reports no data for this selection.'} />
-        ) : selectedAvailability?.warning ? (
-          <p className="ready-note">{selectedAvailability.warning}</p>
-        ) : null}
-        {availabilityState === 'error' ? (
-          <p className="ready-note" role="status">
-            Coverage could not be checked. You can still run the analysis.
-          </p>
-        ) : null}
         {message ? (
           <p className="ready-note" role="status">
             {message}
           </p>
         ) : null}
+        {variables.some((item) => item.id === 'nasa_power_temperature') && regions.some((item) => item.id === 'ceara') ? (
+          <div className="ready-note">
+            <p>Start with temperature at one NASA POWER grid cell near 5.20° S, 39.50° W, January 2020–December 2023. This is a short record at one location.</p>
+            <button type="button" className="button" onClick={() => updateFilters(() => ({
+              variableId: 'nasa_power_temperature', regionId: 'ceara',
+              point: { type: 'Point', coordinates: [-39.5, -5.2] },
+              startDate: '2020-01-01', endDate: '2023-12-31',
+            }), 'NASA POWER case selected. Run analysis to request observations; no result has been assumed.')}>
+              Use NASA POWER case · 2020–2023
+            </button>
+          </div>
+        ) : null}
         <button type="button" className="button" onClick={() => reset()}>
           Reset
         </button>
+        <p className="ready-note"><a href="/credits.html" target="_blank" rel="noreferrer">Credits and AI use</a></p>
       </ReadyState>
     );
   }
@@ -267,6 +273,16 @@ function App() {
             ) : undefined
           }
         >
+          {catalog.status === 'ready' && unavailable ? (
+            <UnavailableState message={selectedAvailability?.warning ?? 'The backend reports no data for this selection.'} />
+          ) : catalog.status === 'ready' && selectedAvailability?.warning ? (
+            <p className="ready-note">{selectedAvailability.warning}</p>
+          ) : null}
+          {catalog.status === 'ready' && availabilityState === 'error' ? (
+            <p className="ready-note" role="status">
+              Coverage could not be checked: {availabilityError} You can still attempt the analysis.
+            </p>
+          ) : null}
           {resultView}
         </ResultSheet>
       }

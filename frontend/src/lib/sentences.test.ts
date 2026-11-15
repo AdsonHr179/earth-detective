@@ -14,6 +14,7 @@ const APPLICABLE = [true, false];
 
 function trend(overrides: Partial<TrendFields>): TrendFields {
   return {
+    inference_status: 'validated',
     direction: 'increasing',
     applicable: true,
     significant: true,
@@ -44,8 +45,7 @@ describe('trendSentence', () => {
     }
   });
 
-  it('uses the inconclusive sentence when the direction is undetermined or the rate is missing', () => {
-    expect(trendSentence(trend({ direction: 'undetermined' }), subject)).toBe(INCONCLUSIVE_SENTENCE);
+  it('uses the inconclusive sentence when the rate is missing', () => {
     expect(trendSentence(trend({ rate_per_decade: null }), subject)).toBe(INCONCLUSIVE_SENTENCE);
     expect(INCONCLUSIVE_SENTENCE).toBe(
       'The data and method did not give enough evidence to identify a trend at this level.',
@@ -67,13 +67,13 @@ describe('trendSentence', () => {
     expect(trendSentence(trend({ direction: 'increasing', significant: true }), subject)).toBe(
       'Variable at this point shows an upward trend that is statistically significant at α = 0.05.',
     );
-    expect(trendSentence(trend({ direction: 'decreasing', significant: true }), subject)).toContain('downward trend');
+    expect(trendSentence(trend({ direction: 'decreasing', rate_per_decade: -0.5, significant: true }), subject)).toContain('downward trend');
   });
 
   it('keeps the wording cautious when the result is not significant or significance is missing', () => {
     const weak = trendSentence(trend({ direction: 'decreasing', significant: false }), subject);
     expect(weak).toContain('not statistically significant');
-    expect(weak).toContain('natural variation');
+    expect(weak).toContain('does not establish stability');
     expect(trendSentence(trend({ significant: null }), subject)).toContain('did not report a significance test');
   });
 
@@ -105,7 +105,6 @@ describe('headlineNumber', () => {
   it('shows a dash, never zero, when there is no estimate', () => {
     for (const t of [
       trend({ rate_per_decade: null }),
-      trend({ direction: 'undetermined' }),
       trend({ applicable: false }),
     ]) {
       const headline = headlineNumber(t, 'unit-a');

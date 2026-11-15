@@ -26,7 +26,7 @@ export type TrendChartProps = {
   /** Selected (effective) period as ISO dates. Observations outside it are drawn as grey history. */
   periodStart: string;
   periodEnd: string;
-  trend: { applicable: boolean; rate_per_decade: number | null; significant: boolean | null };
+  trend: { applicable: boolean; rate_per_decade: number | null; significant: boolean | null; slope_unit?: string; inference_status?: string };
   circular?: boolean;
   /** Only drawn when the backend returned real band values. */
   band?: BandPoint[];
@@ -101,6 +101,8 @@ export default function TrendChart({
     ratePerDecade: trend.rate_per_decade,
     significant: trend.significant,
     applicable: trend.applicable,
+    slopeUnit: trend.slope_unit,
+    inferenceStatus: trend.inference_status,
   })}${forecast && forecastValues.length > 0 ? ` An exploratory projection of ${forecastValues.length} months is drawn as a dash-dot line after the observations. It is not an official forecast. ${backtestSentence(forecast, unit)}` : ''}`;
 
   if (!scales) {
@@ -160,7 +162,7 @@ export default function TrendChart({
       })()
     : '';
 
-  const trendLabel = line && isValid(trend.rate_per_decade) ? `Trend ${formatSigned(trend.rate_per_decade)} ${unit} per decade` : '';
+  const trendLabel = line && isValid(trend.rate_per_decade) ? `Trend ${formatSigned(trend.rate_per_decade)} ${trend.slope_unit || `${unit} per decade`}` : '';
   // The trend label and the last-point label sit on opposite sides of each other so they never overlap:
   // when the line ends above the last observation the trend label goes above it and the point label below.
   const lastY = last ? scales.y(last.value) : 0;
@@ -208,7 +210,7 @@ export default function TrendChart({
               </text>
             </g>
           ))}
-          <text x={plot.left - 6} y={plot.top - 16} textAnchor="end" className="chart-tick">
+          <text x={plot.left} y={plot.top - 16} textAnchor="start" className="chart-tick">
             {unit}
           </text>
 

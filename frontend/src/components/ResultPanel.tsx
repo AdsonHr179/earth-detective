@@ -63,7 +63,10 @@ export default function ResultPanel({
         {stale ? <StateNotice tone="warn" title="Out of date">{STALE_NOTICE}</StateNotice> : null}
         <StateNotice tone="warn" title={NO_DATA_TITLE}>
           <p>{NO_DATA_TEXT}</p>
+          {analysis.trend.inference_reason ? <p>{analysis.trend.inference_reason}</p> : null}
         </StateNotice>
+        <ProvenanceLine analysis={analysis} />
+        <ProvenanceBlock analysis={analysis} />
       </div>
     );
   }
@@ -105,6 +108,11 @@ export default function ResultPanel({
         {stale ? <span className="stale-pill">out of date</span> : null}
       </p>
       <p className="lede">{trendSentence(trend, subject)}</p>
+      {trend.inference_status !== 'validated' ? (
+        <StateNotice tone="warn" title={trend.inference_status === 'legacy' ? 'Legacy inference not validated' : 'Inference limits'}>
+          {trend.inference_reason}
+        </StateNotice>
+      ) : null}
       <ProvenanceLine analysis={analysis} />
 
       <TrendChart
@@ -112,12 +120,11 @@ export default function ResultPanel({
         unit={analysis.unit}
         variableName={variableName}
         regionName={regionName}
-        periodStart={analysis.effective_start_date}
-        periodEnd={analysis.effective_end_date}
+        periodStart={analysis.effective_start_date ?? analysis.start_date}
+        periodEnd={analysis.effective_end_date ?? analysis.end_date}
         trend={trend}
         circular={circular}
         band={analysis.confidence_band}
-        forecast={analysis.forecast}
       />
 
       {analysis.statistics ? <StatisticsBlock statistics={analysis.statistics} unit={analysis.unit} /> : null}

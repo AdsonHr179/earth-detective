@@ -90,6 +90,8 @@ export function fixtureBackendAnalysis(
       quality_flags: 'fixture',
     })),
     trend: {
+      inference_status: 'validated',
+      inference_reason: null,
       direction: 'increasing',
       applicable: true,
       slope_per_decade: 0.5,
