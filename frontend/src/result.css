@@ -341,3 +341,17 @@
     background-position: -200% 0;
   }
 }
+
+.ready-note {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--color-muted);
+}
+
+.ready-state .button {
+  margin-top: 4px;
+}
+
+.run-button--attention {
+  box-shadow: 0 0 0 3px var(--color-surface), 0 0 0 6px var(--color-orange);
+}
