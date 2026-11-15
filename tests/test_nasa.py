@@ -41,6 +41,8 @@ def test_public_nasa_analysis_exposes_statistics_and_forecast(monkeypatch):
     assert data["forecast"]["points"][0] == {"timestamp": "2024-01-01", "value": 21.0}
     assert data["forecast"]["backtest_count"] == 12
     assert data["forecast"]["backtest_mae"] == 0
+    assert data["trend"]["inference_status"] == "descriptive"
+    assert data["trend"]["p_value"] is data["trend"]["confidence_interval"] is data["trend"]["significant"] is None
 
     export = client.post("/api/v1/analyses/export", json=payload)
     assert export.status_code == 200
@@ -86,3 +88,68 @@ def test_archive_cell_axis_order_units_and_fill_values(tmp_path):
         assert round(nasa._cell_value(handle, nasa.PRODUCTS["nasa_merra2_temperature"], -5, -39, month), 2) == 26.85
         assert nasa._cell_value(handle, nasa.PRODUCTS["nasa_gldas_soil_water"], -5, -39, month) == 35
         assert nasa._cell_value(handle, nasa.PRODUCTS["nasa_gldas_soil_water"], -5, -38, month) is None
+
+
+def test_power_wrong_unit_returns_structured_upstream_error(monkeypatch):
+    clear_analysis_cache()
+    monkeypatch.setattr(nasa, "_json", lambda *_: {
+        "header": {"sources": ["MERRA2"], "fill_value": -999},
+        "parameters": {"T2M": {"units": "K"}},
+    })
+    response = client.post("/api/v1/analyses", json={
+        "variable_id": "nasa_power_temperature", "region_id": "ceara",
+        "start_date": "2020-01-01", "end_date": "2020-02-29",
+    })
+    assert response.status_code == 502
+    assert response.json()["error"]["code"] == "upstream_error"
+    assert "temperature unit" in response.json()["detail"]
+
+
+def test_power_empty_months_preserve_gaps_and_null_effective_period(monkeypatch):
+    clear_analysis_cache()
+    monkeypatch.setattr(nasa, "_json", lambda *_: {
+        "header": {
+            "sources": ["MERRA2"], "fill_value": -999, "api": {"version": "synthetic"},
+            "time_standard": "LST",
+        },
+        "parameters": {"T2M": {"units": "C"}},
+        "properties": {"parameter": {"T2M": {"202002": -999, "202003": float("inf")}}},
+    })
+    response = client.post("/api/v1/analyses", json={
+        "variable_id": "nasa_power_temperature", "region_id": "ceara",
+        "start_date": "2020-01-02", "end_date": "2020-05-15",
+    })
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["trend"]["inference_status"] == "insufficient_data"
+    assert body["effective_period"] == {"start_date": None, "end_date": None}
+    assert body["quality"]["coverage_fraction"] == 0
+    assert [point["timestamp"] for point in body["series"]] == ["2020-02-01", "2020-03-01", "2020-04-01"]
+    assert all(point["value"] is None for point in body["series"])
+    assert any("Partial months" in warning for warning in body["quality"]["warnings"])
+
+
+def test_requested_power_period_above_360_complete_months_is_rejected(monkeypatch):
+    monkeypatch.setattr(nasa, "_json", lambda *_: pytest.fail("Over-limit requests must not query NASA"))
+    response = client.post("/api/v1/analyses", json={
+        "variable_id": "nasa_power_temperature", "region_id": "ceara",
+        "start_date": "1994-01-01", "end_date": "2024-01-31",
+    })
+    assert response.status_code == 422
+    assert "360 complete calendar months" in response.json()["detail"]
+
+
+def test_large_period_remains_limited_for_earthdata(monkeypatch):
+    monkeypatch.setenv("EARTHDATA_TOKEN", "synthetic-test-token")
+    monkeypatch.setenv("ENABLE_UNVERIFIED_PROVIDERS", "1")
+
+    def fail(*args):
+        pytest.fail("Over-limit requests must not query Earthdata")
+
+    monkeypatch.setattr(nasa, "_archive_urls", fail)
+    response = client.post("/api/v1/analyses", json={
+        "variable_id": "nasa_merra2_temperature", "region_id": "ceara",
+        "start_date": "2010-01-01", "end_date": "2020-01-31",
+    })
+    assert response.status_code == 422
+    assert "120 complete calendar months" in response.json()["detail"]

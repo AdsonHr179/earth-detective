@@ -77,6 +77,20 @@ class AnalysisRequest(BaseModel):
             raise ValueError("identifier cannot be empty")
         return cleaned
 
+    @field_validator("start_date", "end_date", mode="before")
+    @classmethod
+    def validate_iso_date(cls, value: object) -> date:
+        if type(value) is date:
+            return value
+        if isinstance(value, str):
+            try:
+                parsed = date.fromisoformat(value)
+                if parsed.isoformat() == value:
+                    return parsed
+            except ValueError:
+                pass
+        raise ValueError("date must use ISO YYYY-MM-DD")
+
     @model_validator(mode="after")
     def validate_dates(self) -> "AnalysisRequest":
         if self.start_date > self.end_date:

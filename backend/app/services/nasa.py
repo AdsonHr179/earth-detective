@@ -17,7 +17,6 @@ import h5py
 import httpx
 import numpy as np
 from fsspec.implementations.http import HTTPFileSystem
-from curl_cffi.requests.exceptions import RequestException as FetcherRequestError
 from scrapling.fetchers import Fetcher
 
 from app.schemas import SeriesPoint, VariableCatalogItem
@@ -26,6 +25,7 @@ CMR = "https://cmr.earthdata.nasa.gov/search/granules.json"
 POWER = "https://power.larc.nasa.gov/api/temporal/monthly/point"
 ARCHIVE_HOST = "data.gesdisc.earthdata.nasa.gov"
 MAX_MONTHS = 120
+POWER_MAX_MONTHS = 360
 NASA_SITES = (
     ("imerg", "Dataset documentation", "https://gpm.nasa.gov/data/imerg"),
     ("merra2", "Dataset documentation", "https://gmao.gsfc.nasa.gov/gmao-products/merra-2/"),
@@ -57,6 +57,7 @@ class Product:
     end: date | None = None
     group: str = "/"
     longitude_first: bool = False
+    max_months: int = MAX_MONTHS
 
 
 PRODUCTS = {
@@ -64,7 +65,7 @@ PRODUCTS = {
         "NASA POWER · Air temperature at 2 m", "°C",
         "Monthly mean temperature derived from MERRA-2 and distributed by NASA POWER.",
         "nasa-power-monthly", "https://power.larc.nasa.gov/docs/services/api/temporal/monthly/",
-        date(1981, 1, 1), "T2M",
+        date(1981, 1, 1), "T2M", max_months=POWER_MAX_MONTHS,
     ),
     "nasa_imerg_precipitation": Product(
         "IMERG Final V07 · Precipitation", "mm/month",
@@ -121,7 +122,7 @@ def _json(url: str, params: dict) -> dict:
         if not isinstance(payload, dict):
             raise NasaDataError("NASA returned an unexpected data format.")
         return payload
-    except (ValueError, OSError, RuntimeError, FetcherRequestError) as exc:
+    except (ValueError, OSError, RuntimeError) as exc:
         raise NasaDataError("NASA data could not be retrieved or parsed.") from exc
 
 
@@ -157,7 +158,7 @@ def next_month(month: date) -> date:
     return date(month.year + (month.month == 12), month.month % 12 + 1, 1)
 
 
-def full_months(start: date, end: date) -> list[date]:
+def full_months(start: date, end: date, max_months: int = MAX_MONTHS) -> list[date]:
     month = start.replace(day=1)
     if start.day != 1:
         month = next_month(month)
@@ -166,8 +167,8 @@ def full_months(start: date, end: date) -> list[date]:
         if month.year == end.year and month.month == end.month and end.day < monthrange(end.year, end.month)[1]:
             break
         months.append(month)
-        if len(months) > MAX_MONTHS:
-            raise ValueError(f"Select up to {MAX_MONTHS} complete calendar months for a NASA analysis.")
+        if len(months) > max_months:
+            raise ValueError(f"Select up to {max_months} complete calendar months for this NASA product.")
         if (month.year, month.month) == (end.year, end.month):
             break
         month = next_month(month)
@@ -304,8 +305,9 @@ def _power_values(
             value = months_by_key.get(month.strftime("%Y%m"))
             if type(value) in (int, float) and value != missing and math.isfinite(value):
                 values[month] = float(value)
-        # Hash canonical JSON so whitespace changes do not change the revision fingerprint.
-        encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        # POWER response timings vary between otherwise identical acquisitions.
+        content = {key: value for key, value in payload.items() if key != "times"}
+        encoded = json.dumps(content, sort_keys=True, separators=(",", ":")).encode("utf-8")
         provenance = {
             "query_url": f"{POWER}?{urlencode(params)}",
             "response_sha256": hashlib.sha256(encoded).hexdigest(),

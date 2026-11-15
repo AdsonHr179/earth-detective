@@ -27,10 +27,11 @@ def availability(variable_id: str, region_id: str) -> AvailabilityResponse:
     warning = "Public NASA POWER product. A successful query confirms coverage at the selected point."
     available = True
     if product.collection:
-        available = bool(earthdata_token()) and unverified_providers_enabled()
+        token_configured = bool(earthdata_token())
+        available = token_configured and unverified_providers_enabled()
         if available:
             warning = "Experimental archive access. A successful query is required to confirm access and coverage."
-        elif not earthdata_token():
+        elif not token_configured:
             warning = "This archive requires EARTHDATA_TOKEN in the backend environment."
         else:
             warning = UNVERIFIED_PROVIDER_WARNING
@@ -48,7 +49,7 @@ def validate(payload: AnalysisRequest, product: Product) -> list[date]:
     if not status.available:
         raise HTTPException(status_code=503, detail=status.warning)
     try:
-        months = full_months(payload.start_date, payload.end_date)
+        months = full_months(payload.start_date, payload.end_date, product.max_months)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     if months[0] < product.start or (status.end_date and months[-1] > status.end_date):
