@@ -33,7 +33,7 @@ class RegionCatalogItem(BaseModel):
     geometry_name: str = Field(..., alias="geometryName")
     geometry_ref: str = Field(..., alias="geometryRef")
     boundary_state_codes: list[str] = Field(..., alias="boundaryStateCodes")
-    center: RegionCenter
+    center: RegionCenter | None
 
 
 class AvailabilityResponse(BaseModel):

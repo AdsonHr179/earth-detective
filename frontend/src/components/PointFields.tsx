@@ -8,7 +8,7 @@ type PointFieldsProps = {
   /** True when `point` is the region center rather than a choice. */
   isRegionCenter: boolean;
   onApply: (point: GeoJSONPoint) => void;
-  onUseCenter: () => void;
+  onUseCenter?: () => void;
   /** Called after a point was applied from the fields, for example to close the menu. */
   onDone?: () => void;
 };
@@ -26,9 +26,8 @@ export default function PointFields({ point, isRegionCenter, onApply, onUseCente
   const pointLongitude = point?.coordinates[0];
   const pointLatitude = point?.coordinates[1];
   useEffect(() => {
-    if (pointLatitude === undefined || pointLongitude === undefined) return;
-    setLatitude(coordinateText(pointLatitude));
-    setLongitude(coordinateText(pointLongitude));
+    setLatitude(pointLatitude === undefined ? '' : coordinateText(pointLatitude));
+    setLongitude(pointLongitude === undefined ? '' : coordinateText(pointLongitude));
     setErrors({});
   }, [pointLatitude, pointLongitude]);
 
@@ -49,7 +48,7 @@ export default function PointFields({ point, isRegionCenter, onApply, onUseCente
       <p className="popover-hint">
         {isRegionCenter
           ? 'Using the center of the region. Type coordinates or click the map to choose another point.'
-          : 'Type coordinates or click the map to move the point.'}
+          : 'Enter latitude and longitude or click the map to select a point.'}
       </p>
       <div className="field">
         <label htmlFor={latId}>Latitude (&minus;90 to 90)</label>
@@ -91,17 +90,19 @@ export default function PointFields({ point, isRegionCenter, onApply, onUseCente
         <button type="submit" className="button button--primary">
           Set point
         </button>
-        <button
-          type="button"
-          className="button"
-          disabled={isRegionCenter}
-          onClick={() => {
-            onUseCenter();
-            onDone?.();
-          }}
-        >
-          Use region center
-        </button>
+        {onUseCenter ? (
+          <button
+            type="button"
+            className="button"
+            disabled={isRegionCenter}
+            onClick={() => {
+              onUseCenter();
+              onDone?.();
+            }}
+          >
+            Use region center
+          </button>
+        ) : null}
       </div>
     </form>
   );

@@ -153,3 +153,44 @@ def test_large_period_remains_limited_for_earthdata(monkeypatch):
     })
     assert response.status_code == 422
     assert "120 complete calendar months" in response.json()["detail"]
+
+
+def test_worldwide_analysis_requires_and_uses_the_selected_coordinates(monkeypatch):
+    clear_analysis_cache()
+
+    def power_response(url, params):
+        assert url == nasa.POWER
+        assert (params["longitude"], params["latitude"]) == (139.6917, 35.6895)
+        return {
+            "header": {
+                "sources": ["MERRA2"], "fill_value": -999, "api": {"version": "synthetic"},
+                "time_standard": "LST",
+            },
+            "parameters": {"T2M": {"units": "C"}},
+            "properties": {"parameter": {"T2M": {"202001": 5, "202002": 6, "202003": 7}}},
+        }
+
+    monkeypatch.setattr(nasa, "_json", power_response)
+    region = next(item for item in client.get("/api/v1/regions").json() if item["id"] == "world")
+    assert region["center"] is None
+    assert region["boundaryStateCodes"] == []
+    assert client.get(
+        "/api/v1/availability?variable_id=nasa_power_temperature&region_id=world"
+    ).json()["available"] is True
+
+    request = {
+        "variable_id": "nasa_power_temperature", "region_id": "world",
+        "start_date": "2020-01-01", "end_date": "2020-03-31",
+    }
+    missing_point = client.post("/api/v1/analyses", json=request)
+    assert missing_point.status_code == 422
+    assert "Choose a point" in missing_point.json()["error"]["message"]
+
+    point = {"type": "Point", "coordinates": [139.6917, 35.6895]}
+    response = client.post("/api/v1/analyses", json={**request, "spatial_query": point})
+    assert response.status_code == 200, response.text
+    saved = response.json()
+    assert saved["region_id"] == "world"
+    assert saved["spatial_query"] == point
+    assert saved["quality"]["sample_count"] == 3
+    assert client.get(f"/api/v1/analyses/{saved['analysis_id']}").json() == saved

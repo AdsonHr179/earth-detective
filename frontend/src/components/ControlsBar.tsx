@@ -126,7 +126,7 @@ export default function ControlsBar({
                   <span>{item.name}</span>
                 </label>
               ))}
-              <p className="popover-hint">Choosing a region moves the point to its center.</p>
+              <p className="popover-hint">Choose Worldwide to select any point, or use a regional preset.</p>
             </fieldset>
           )}
         </ChipMenu>
@@ -175,7 +175,7 @@ export default function ControlsBar({
               point={point}
               isRegionCenter={pointIsRegionCenter}
               onApply={onPoint}
-              onUseCenter={onUseRegionCenter}
+              onUseCenter={region?.center ? onUseRegionCenter : undefined}
               onDone={close}
             />
           )}
