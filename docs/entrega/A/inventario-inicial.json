@@ -1,0 +1,28 @@
+{
+  "root": "C:\\Users\\adson\\.codex\\worktrees\\earth-delivery-a\\earth-detective",
+  "base": "09b49c31242f2c8c6cb732cb58cf05ff564749d4",
+  "branch": "delivery/adson-20261115",
+  "original_checkouts_preserved": [
+    "C:/Users/adson/Downloads/ADSON/PROJETOS/earth-detective",
+    "C:/Users/adson/Downloads/ADSON/PROJETOS/earth-detective-preview"
+  ],
+  "original_heads": [
+    "00f5089689ae719cf6e0e3afa7625dab3d68a170",
+    "35e968f"
+  ],
+  "node": "v24.18.0",
+  "npm": "11.16.0",
+  "system_python": "3.14.5",
+  "frontend_baseline": {
+    "revision": "00f5089689ae719cf6e0e3afa7625dab3d68a170",
+    "same_tree_as_base": true,
+    "tests": 163,
+    "test_files": 19,
+    "lint_exit": 0,
+    "build_exit": 0
+  },
+  "npm_ci": {
+    "exit": 0,
+    "audit_summary": "13 vulnerabilities (10 moderate, 1 high, 2 critical); review pending, no mass upgrades"
+  }
+}

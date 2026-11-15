@@ -1,0 +1,53 @@
+
+> earth-detective-frontend@0.1.0 test:e2e
+> playwright test --project=desktop --grep query, interpret
+
+[WebServer] (node:23784) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:19148) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [desktop] › ..\tests\e2e\journey.spec.ts:107:1 › TEST FIXTURE: query, interpret, export and mark changed filters stale (10.0s)
+
+
+  1) [desktop] › ..\tests\e2e\journey.spec.ts:107:1 › TEST FIXTURE: query, interpret, export and mark changed filters stale
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('Descriptive estimate only', { exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByText('Descriptive estimate only', { exact: true }) with timeout 5000ms
+      - waiting for getByText('Descriptive estimate only', { exact: true })
+
+
+      111 |   await page.getByRole('button', { name: 'Run analysis', exact: true }).click();
+      112 |   await expect(page.getByRole('heading', { name: 'Air temperature (TEST FIXTURE) at the selected point' })).toBeVisible();
+    > 113 |   await expect(page.getByText('Descriptive estimate only', { exact: true })).toBeVisible();
+          |                                                                              ^
+      114 |   await expect(page.getByText(/Statistical inference has not been validated/)).toBeVisible();
+      115 |   await expect(page.getByText(/Significant \(p/)).toHaveCount(0);
+      116 |   await expect(page.getByText('One point, not an area average', { exact: true })).toBeVisible();
+        at C:\Users\adson\.codex\worktrees\earth-delivery-a\earth-detective\tests\e2e\journey.spec.ts:113:78
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\docs\entrega\A\e2e-results\journey-TEST-FIXTURE-query-6f8ab--mark-changed-filters-stale-desktop\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\docs\entrega\A\e2e-results\journey-TEST-FIXTURE-query-6f8ab--mark-changed-filters-stale-desktop\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ..\docs\entrega\A\e2e-results\journey-TEST-FIXTURE-query-6f8ab--mark-changed-filters-stale-desktop\trace.zip
+    Usage:
+
+        npx playwright show-trace ..\docs\entrega\A\e2e-results\journey-TEST-FIXTURE-query-6f8ab--mark-changed-filters-stale-desktop\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [desktop] › ..\tests\e2e\journey.spec.ts:107:1 › TEST FIXTURE: query, interpret, export and mark changed filters stale

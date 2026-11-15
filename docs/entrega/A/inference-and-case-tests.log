@@ -1,0 +1,18 @@
+
+> earth-detective-frontend@0.1.0 test
+> vitest run src/App.case.test.tsx src/api/inferenceContract.test.ts src/components/InferenceStates.test.tsx
+
+
+ RUN  v2.1.9 C:/Users/adson/.codex/worktrees/earth-delivery-a/earth-detective/frontend
+
+ ✓ src/api/inferenceContract.test.ts (7 tests) 122ms
+ ✓ src/components/InferenceStates.test.tsx (5 tests) 1214ms
+   ✓ ResultPanel V1 states > renders descriptive without inferential evidence 818ms
+ ✓ src/App.case.test.tsx (4 tests) 3550ms
+   ✓ Main case entry and availability (TEST FIXTURES ONLY) > selects catalog-backed POWER case without querying until Run analysis is clicked 2254ms
+   ✓ Main case entry and availability (TEST FIXTURES ONLY) > keeps the unavailability reason visible beside a stale result 882ms
+
+ Test Files  3 passed (3)
+      Tests  16 passed (16)
+   Start at  17:30:49
+   Duration  30.87s (transform 3.38s, setup 11.68s, collect 8.48s, tests 4.89s, environment 42.65s, prepare 4.30s)

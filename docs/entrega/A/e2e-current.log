@@ -1,0 +1,19 @@
+
+> earth-detective-frontend@0.1.0 test:e2e
+> playwright test
+
+[WebServer] (node:21852) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 4 tests using 1 worker
+
+(node:23032) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 [desktop] › ..\tests\e2e\journey.spec.ts:107:1 › TEST FIXTURE: query, interpret, export and mark changed filters stale (11.8s)
+  ok 2 [desktop] › ..\tests\e2e\journey.spec.ts:139:1 › TEST FIXTURE: failed saved GET retries same ID without POST (3.2s)
+(node:30348) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 3 [mobile-390] › ..\tests\e2e\journey.spec.ts:107:1 › TEST FIXTURE: query, interpret, export and mark changed filters stale (11.7s)
+  ok 4 [mobile-390] › ..\tests\e2e\journey.spec.ts:139:1 › TEST FIXTURE: failed saved GET retries same ID without POST (3.9s)
+
+  4 passed (1.4m)
