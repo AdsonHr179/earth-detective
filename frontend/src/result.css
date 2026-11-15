@@ -290,3 +290,54 @@
     margin: 4px 0;
   }
 }
+
+/* Ready, loading and error views */
+.ready-state {
+  padding: 4px 0 16px;
+}
+
+.ready-title {
+  font-size: 26px;
+  line-height: 1.2;
+  margin: 4px 0 12px;
+}
+
+.ready-selection {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.ready-help {
+  font-size: 14px;
+  color: var(--color-muted);
+  margin-bottom: 16px;
+}
+
+.service-message {
+  font-size: 13px;
+  color: var(--color-muted);
+}
+
+.skeleton {
+  height: 14px;
+  border-radius: 7px;
+  margin: 10px 0;
+  background: linear-gradient(90deg, #2a383e, #3a4a52, #2a383e);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+.skeleton--medium {
+  width: 80%;
+}
+
+.skeleton--short {
+  width: 60%;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}

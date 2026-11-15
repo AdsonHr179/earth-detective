@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { server } from '../test/server';
 import { deferred } from '../test/handlers';
 import { fixtureAvailability, fixtureBackendAnalysis, fixtureRegions } from '../test/fixtures';
+import { ApiError, InputError } from '../api/errors';
 import { DEFAULT_FILTERS, useAnalysis } from './useAnalysis';
 
 const availability = fixtureAvailability('air_temperature', 'ceara');
@@ -59,6 +60,8 @@ describe('useAnalysis', () => {
     act(() => result.current.run());
     await waitFor(() => expect(result.current.status).toBe('error'));
     expect(result.current.message).toBe('Upstream provider unavailable');
+    expect(result.current.error).toBeInstanceOf(ApiError);
+    expect((result.current.error as ApiError).status).toBe(503);
     expect(result.current.canRetry).toBe(true);
 
     act(() => result.current.retry());
@@ -163,5 +166,56 @@ describe('useAnalysis', () => {
     act(() => result.current.run());
     expect(result.current.status).toBe('error');
     expect(result.current.message).toBe('Choose a valid date range before running the analysis.');
+  });
+
+  it('exposes a local validation problem as an InputError', () => {
+    const { result } = setup();
+    act(() => result.current.setStartDate('2023-12-31'));
+    act(() => result.current.setEndDate('2015-01-01'));
+    act(() => result.current.run());
+    expect(result.current.error).toBeInstanceOf(InputError);
+  });
+
+  it('cancel stops the request, keeps the choices and clears the error', async () => {
+    const gate = deferred();
+    analysesHandler(async () => {
+      await gate.promise;
+      return HttpResponse.json(fixtureBackendAnalysis());
+    });
+    const { result } = setup();
+    act(() => result.current.setVariable('precipitation'));
+
+    act(() => result.current.run());
+    expect(result.current.status).toBe('loading');
+    act(() => result.current.cancel());
+
+    expect(result.current.status).toBe('idle');
+    expect(result.current.message).toBe('Analysis cancelled. Your choices are unchanged.');
+    expect(result.current.filters.variableId).toBe('precipitation');
+    gate.release();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(result.current.status).toBe('idle');
+    expect(result.current.analysis).toBeNull();
+  });
+
+  it('cancel does nothing when no request is running', async () => {
+    analysesHandler(() => HttpResponse.json(fixtureBackendAnalysis()));
+    const { result } = setup();
+    act(() => result.current.run());
+    await waitFor(() => expect(result.current.status).toBe('success'));
+
+    act(() => result.current.cancel());
+    expect(result.current.status).toBe('success');
+  });
+
+  it('clears the error when a choice changes', async () => {
+    analysesHandler(() => HttpResponse.json({ detail: 'no' }, { status: 502 }));
+    const { result } = setup();
+    act(() => result.current.run());
+    await waitFor(() => expect(result.current.status).toBe('error'));
+
+    act(() => result.current.setVariable('precipitation'));
+    expect(result.current.error).toBeNull();
+    expect(result.current.status).toBe('idle');
   });
 });

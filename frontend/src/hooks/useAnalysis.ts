@@ -6,6 +6,7 @@ import {
   type GeoJSONPoint,
   type RegionRecord,
 } from '../api/client';
+import { InputError } from '../api/errors';
 
 export type AnalysisStatus = 'idle' | 'loading' | 'success' | 'no-data' | 'error' | 'stale';
 
@@ -66,6 +67,7 @@ export function useAnalysis({ regions, availability, defaults = DEFAULT_FILTERS 
   const [phase, setPhaseState] = useState<Phase>('idle');
   const [result, setResult] = useState<StoredResult | null>(null);
   const [message, setMessage] = useState('');
+  const [error, setError] = useState<unknown>(null);
 
   const filtersRef = useRef(filters);
   const phaseRef = useRef<Phase>('idle');
@@ -123,6 +125,7 @@ export function useAnalysis({ regions, availability, defaults = DEFAULT_FILTERS 
       const previousPhase = phaseRef.current;
       cancelInFlight();
       setPhase('idle');
+      setError(null);
       if (nextMessage !== undefined) {
         setMessage(nextMessage);
       } else if (previousPhase === 'loading') {
@@ -172,8 +175,10 @@ export function useAnalysis({ regions, availability, defaults = DEFAULT_FILTERS 
       cancelInFlight();
       lastRequestRef.current = next;
 
+      setError(null);
       const fail = (text: string) => {
         setResult(null);
+        setError(new InputError(text));
         setPhase('error');
         setMessage(text);
       };
@@ -247,12 +252,13 @@ export function useAnalysis({ regions, availability, defaults = DEFAULT_FILTERS 
             commitFilters({ ...filtersRef.current, point: analysis.spatial_query ?? queryPoint });
           }
         })
-        .catch((error: unknown) => {
+        .catch((failure: unknown) => {
           if (!isCurrent()) return;
           controllerRef.current = null;
           setResult(null);
+          setError(failure);
           setPhase('error');
-          setMessage(error instanceof Error ? error.message : 'The analysis could not be completed.');
+          setMessage(failure instanceof Error ? failure.message : 'The analysis could not be completed.');
         });
     },
     [cancelInFlight, commitFilters, setPhase],
@@ -263,9 +269,19 @@ export function useAnalysis({ regions, availability, defaults = DEFAULT_FILTERS 
     if (last) run(last);
   }, [run]);
 
+  /** Stops a request in flight. The choices stay as they are and nothing is shown as a result. */
+  const cancel = useCallback(() => {
+    if (phaseRef.current !== 'loading') return;
+    cancelInFlight();
+    setError(null);
+    setPhase('idle');
+    setMessage('Analysis cancelled. Your choices are unchanged.');
+  }, [cancelInFlight, setPhase]);
+
   const reset = useCallback(() => {
     cancelInFlight();
     lastRequestRef.current = null;
+    setError(null);
     commitFilters(defaultsRef.current);
     setResult(null);
     setPhase('idle');
@@ -290,6 +306,8 @@ export function useAnalysis({ regions, availability, defaults = DEFAULT_FILTERS 
     resultKind: result?.kind ?? null,
     isStale: status === 'stale',
     message,
+    /** The failure behind the 'error' status (an ApiError, an InputError or a network error). */
+    error: status === 'error' ? error : null,
     canRetry: status === 'error',
     setVariable,
     setRegion,
@@ -299,6 +317,7 @@ export function useAnalysis({ regions, availability, defaults = DEFAULT_FILTERS 
     updateFilters,
     run,
     retry,
+    cancel,
     reset,
   };
 }
