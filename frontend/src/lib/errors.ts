@@ -21,6 +21,10 @@ const BY_STATUS: Record<number, { what: string; action: string }> = {
     what: 'The data changed while the analysis was running, so the result no longer matches the dataset version that was asked for.',
     action: 'Try again to use the latest version.',
   },
+  413: {
+    what: 'The request was too large for the service to accept.',
+    action: 'Check the choices and try again. If it keeps happening, tell the project team.',
+  },
   422: {
     what: 'The service could not use these choices, for example a period or a point it does not cover.',
     action: 'Check the period and the point, then try again.',
