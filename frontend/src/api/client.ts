@@ -97,7 +97,7 @@ export type AnalysisResponse = {
   confidence_band: ConfidenceBandPoint[];
 };
 
-type BackendAnalysisResponse = {
+export type BackendAnalysisResponse = {
   analysis_id: string;
   dataset_version: string;
   method_version: string;
@@ -185,7 +185,7 @@ function isVariableRecord(value: unknown): value is VariableRecord {
   );
 }
 
-function adaptBackendAnalysis(result: BackendAnalysisResponse): AnalysisResponse {
+export function adaptBackendAnalysis(result: BackendAnalysisResponse): AnalysisResponse {
   const chartPoints = result.series.map((point) => ({
     date: point.timestamp,
     value: point.value,
@@ -275,11 +275,15 @@ export async function fetchAvailability(
   return requestJson<AvailabilityResponse>(`/api/v1/availability?${query}`, { signal });
 }
 
-export async function requestAnalysis(payload: AnalysisRequest): Promise<AnalysisResponse> {
+export async function requestAnalysis(
+  payload: AnalysisRequest,
+  signal?: AbortSignal,
+): Promise<AnalysisResponse> {
   const result = await requestJson<BackendAnalysisResponse>('/api/v1/analyses', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
+    signal,
   });
   return adaptBackendAnalysis(result);
 }
