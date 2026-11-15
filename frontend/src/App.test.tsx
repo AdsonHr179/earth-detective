@@ -4,7 +4,7 @@ import { http, HttpResponse } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
 import type { GeoJSONPoint } from './api/client';
 import App from './App';
-import { useCatalogHandlers } from './test/handlers';
+import { registerCatalogHandlers } from './test/handlers';
 import { fixtureBackendAnalysis } from './test/fixtures';
 import { server } from './test/server';
 
@@ -34,7 +34,7 @@ function analysesReturning(
 }
 
 async function renderApp() {
-  useCatalogHandlers();
+  registerCatalogHandlers();
   const user = userEvent.setup();
   render(<App />);
   await screen.findByText(/Catalog ready/);

@@ -7,7 +7,7 @@ import {
 } from './fixtures';
 
 /** Registers catalog + availability endpoints (TEST FIXTURE data). Analyses are left to each test. */
-export function useCatalogHandlers() {
+export function registerCatalogHandlers() {
   server.use(
     http.get('*/api/v1/variables', () => HttpResponse.json(fixtureVariables)),
     http.get('*/api/v1/regions', () => HttpResponse.json(fixtureRegions)),
