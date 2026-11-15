@@ -9,7 +9,7 @@ import { fixtureBackendAnalysis } from './test/fixtures';
 import { server } from './test/server';
 
 // Leaflet does not run in jsdom; the map is replaced by a button that selects a fixed point.
-vi.mock('./components/RegionMap', () => ({
+vi.mock('./components/MapStage', () => ({
   default: ({ onSelectPosition }: { onSelectPosition: (point: GeoJSONPoint) => void }) => (
     <button
       type="button"
@@ -122,7 +122,7 @@ describe('App analysis flow', () => {
     const start = screen.getByLabelText('Start date');
     await user.clear(start);
     await user.type(start, '2018-01-01');
-    await user.click(screen.getByRole('button', { name: 'Pick map point' }));
+    await user.click(await screen.findByRole('button', { name: 'Pick map point' }));
     expect(screen.getByText(/Selected point: -4\.5000°, -38\.5000°/)).toBeInTheDocument();
     await user.click(runButton);
     await screen.findByRole('heading', { name: /at the selected point/ });

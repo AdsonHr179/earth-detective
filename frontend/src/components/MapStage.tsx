@@ -4,18 +4,22 @@ import {
   CircleMarker,
   GeoJSON,
   MapContainer,
-  TileLayer,
   Tooltip,
   useMap,
   useMapEvents,
+  ZoomControl,
 } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { GeoJSONPoint, RegionRecord } from '../api/client';
+import { readMapTheme } from '../lib/mapTheme';
 
-type RegionMapProps = {
+export type MapStageProps = {
   regions: RegionRecord[];
   selectedRegion: string;
+  /** The point that will be analysed (the region center when none was chosen). */
   selectedPosition?: GeoJSONPoint | null;
+  /** True when `selectedPosition` is the default region center rather than a choice. */
+  isDefaultPoint?: boolean;
   onSelectPosition: (position: GeoJSONPoint) => void;
 };
 
@@ -26,18 +30,6 @@ type VisibleBoundary = {
 };
 
 const boundaryCache = new Map<string, GeoJSON.GeoJsonObject>();
-const boundaryStyle: L.PathOptions = {
-  color: '#0c8b62',
-  fillColor: '#0c8b62',
-  fillOpacity: 0.12,
-  weight: 2,
-};
-const selectedBoundaryStyle: L.PathOptions = {
-  color: '#b66b12',
-  fillColor: '#f1a63b',
-  fillOpacity: 0.24,
-  weight: 3,
-};
 const brazilStateCodes = [
   '11', '12', '13', '14', '15', '16', '17',
   '21', '22', '23', '24', '25', '26', '27', '28', '29',
@@ -208,23 +200,55 @@ function MapPositionSelector({
 }: {
   onSelectPosition: (position: GeoJSONPoint) => void;
 }) {
+  const map = useMap();
+
   useMapEvents({
     click: ({ latlng }) =>
       onSelectPosition({
         type: 'Point',
         coordinates: [latlng.lng, latlng.lat],
       }),
+    // Keyboard: arrow keys pan the map; Enter chooses the point at the center of the view.
+    keydown: ({ originalEvent }) => {
+      if (originalEvent.key !== 'Enter') return;
+      originalEvent.preventDefault();
+      const center = map.getCenter();
+      onSelectPosition({ type: 'Point', coordinates: [center.lng, center.lat] });
+    },
   });
 
   return null;
 }
 
-export default function RegionMap({
+/** Names the map for assistive technology and keeps Leaflet in step with its container size. */
+function MapAccessibility({ describedBy }: { describedBy: string }) {
+  const map = useMap();
+
+  useEffect(() => {
+    const container = map.getContainer();
+    container.setAttribute('role', 'group');
+    container.setAttribute('aria-label', 'Map of the selected region');
+    container.setAttribute('aria-describedby', describedBy);
+  }, [map, describedBy]);
+
+  useEffect(() => {
+    if (typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(() => map.invalidateSize());
+    observer.observe(map.getContainer());
+    return () => observer.disconnect();
+  }, [map]);
+
+  return null;
+}
+
+export default function MapStage({
   regions,
   selectedRegion,
   selectedPosition,
+  isDefaultPoint = false,
   onSelectPosition,
-}: RegionMapProps) {
+}: MapStageProps) {
+  const theme = useMemo(() => readMapTheme(), []);
   const initialRegion = regions.find((region) => region.id === selectedRegion) ?? regions[0];
   const initialCenter: [number, number] = initialRegion
     ? [initialRegion.center.latitude, initialRegion.center.longitude]
@@ -378,7 +402,7 @@ export default function RegionMap({
               : 'No selected-region boundaries are visible in the current map view.';
 
   return (
-    <>
+    <div className="map-root">
       <MapContainer
         className="interactive-map"
         center={initialCenter}
@@ -387,12 +411,12 @@ export default function RegionMap({
         maxZoom={17}
         scrollWheelZoom
         keyboard
-        aria-label="Interactive map of available regions"
+        zoomControl={false}
+        attributionControl={false}
       >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors · Boundaries: <a href="https://www.ibge.gov.br/">IBGE</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+        {/* No third-party tiles: the background is a flat dark colour (CSS); only IBGE boundaries are drawn. */}
+        <ZoomControl position="bottomright" />
+        <MapAccessibility describedBy="map-keyboard-help" />
         <ViewportBoundsReporter onChange={reportViewportBounds} />
         <MapPositionSelector onSelectPosition={handleMapPositionSelect} />
         <SelectedRegionViewport region={activeRegion} />
@@ -402,30 +426,47 @@ export default function RegionMap({
             data={boundary.data}
             style={
               boundary.stateCode === selectedStateBoundary?.stateCode
-                ? selectedBoundaryStyle
-                : boundaryStyle
+                ? theme.selectedBoundary
+                : theme.boundary
             }
             interactive={false}
           />
         ))}
         {selectedPosition?.type === 'Point' ? (
-          <CircleMarker
-            center={[selectedPosition.coordinates[1], selectedPosition.coordinates[0]]}
-            radius={9}
-            pathOptions={{
-              color: '#b66b12',
-              fillColor: '#f1a63b',
-              fillOpacity: 0.85,
-              weight: 3,
-            }}
-          >
-            <Tooltip>Selected analysis position</Tooltip>
-          </CircleMarker>
+          <>
+            <CircleMarker
+              center={[selectedPosition.coordinates[1], selectedPosition.coordinates[0]]}
+              radius={11}
+              pathOptions={theme.pointRing}
+            >
+              <Tooltip>{isDefaultPoint ? 'Region center (default point)' : 'Selected analysis point'}</Tooltip>
+            </CircleMarker>
+            <CircleMarker
+              center={[selectedPosition.coordinates[1], selectedPosition.coordinates[0]]}
+              radius={3.5}
+              interactive={false}
+              pathOptions={theme.pointDot}
+            />
+          </>
         ) : null}
       </MapContainer>
+      <p className="visually-hidden" id="map-keyboard-help">
+        Click the map to choose the point. With the keyboard, use the arrow keys to move the map and press Enter to
+        choose the point at the center of the view, or type latitude and longitude in the Point menu.
+      </p>
       <p className="map-boundary-status" role="status" aria-live="polite">
         {boundaryMessage}
       </p>
-    </>
+      <p className="map-attribution">
+        Boundaries:{' '}
+        <a href="https://www.ibge.gov.br/" target="_blank" rel="noreferrer noopener">
+          IBGE
+        </a>{' '}
+        &copy; IBGE &middot;{' '}
+        <a href="https://leafletjs.com/" target="_blank" rel="noreferrer noopener">
+          Leaflet
+        </a>
+      </p>
+    </div>
   );
 }

@@ -8,7 +8,7 @@ import {
   type RegionRecord,
   type VariableRecord,
 } from './api/client';
-import RegionMap from './components/RegionMap';
+import LazyMap from './components/LazyMap';
 import { DEFAULT_FILTERS, STALE_NOTICE, useAnalysis } from './hooks/useAnalysis';
 
 type ExampleConfig = {
@@ -402,7 +402,7 @@ function App() {
         </div>
 
         <div className="map-card">
-          <RegionMap
+          <LazyMap
             regions={regions}
             selectedRegion={selectedRegion}
             selectedPosition={selectedPosition}
