@@ -2,12 +2,15 @@
 export class ApiError extends Error {
   readonly status: number;
   readonly detail: string;
+  /** The backend's stable error code (for example `request_too_large`), when it sent one. */
+  readonly code: string | undefined;
 
-  constructor(status: number, detail: string, message?: string) {
+  constructor(status: number, detail: string, message?: string, code?: string) {
     super(message ?? (detail || `Request failed (${status})`));
     this.name = 'ApiError';
     this.status = status;
     this.detail = detail;
+    this.code = code;
   }
 }
 

@@ -24,6 +24,16 @@ export type RegionRecord = {
   };
 };
 
+export type SavedAnalysisSummary = {
+  analysis_id: string;
+  variable_id: string;
+  region_id: string;
+  product: string;
+  start_date: string;
+  end_date: string;
+  retrieved_at: string;
+};
+
 export type AnalysisRequest = {
   variable_id: string;
   region_id: string;
@@ -58,6 +68,22 @@ export type ConfidenceBandPoint = {
 export type GeoJSONPoint = {
   type: 'Point';
   coordinates: [number, number];
+};
+
+export type DescriptiveStatistics = {
+  count: number;
+  mean: number;
+  median: number;
+  min: number;
+  max: number;
+  standard_deviation: number | null;
+};
+
+export type MonthlyForecast = {
+  method: string;
+  points: Array<{ timestamp: string; value: number }>;
+  backtest_mae: number | null;
+  backtest_count: number;
 };
 
 export type AnalysisResponse = {
@@ -107,6 +133,8 @@ export type AnalysisResponse = {
   chart_points: AnalysisPoint[];
   annual_points: AnalysisPoint[];
   confidence_band: ConfidenceBandPoint[];
+  statistics: DescriptiveStatistics | null;
+  forecast: MonthlyForecast | null;
 };
 
 export type BackendAnalysisResponse = {
@@ -148,20 +176,38 @@ export type BackendAnalysisResponse = {
     warnings: string[];
   };
   explanation: { summary: string; limitations: string };
+  statistics?: DescriptiveStatistics | null;
+  forecast?: MonthlyForecast | null;
 };
 
-async function getApiError(response: Response): Promise<ApiError> {
+/** Plain text from the backend's `detail` field (a string, or a list of validation items). */
+function detailText(detail: unknown): string {
+  if (typeof detail === 'string') return detail;
+  if (Array.isArray(detail)) {
+    return detail
+      .map((item) => (typeof item === 'object' && item !== null && 'msg' in item ? String(item.msg) : ''))
+      .filter(Boolean)
+      .join('; ');
+  }
+  return '';
+}
+
+/**
+ * Reads an error response. The newer `error: { code, message }` shape wins when present;
+ * the older `detail` field stays as a fallback.
+ */
+export async function getApiError(response: Response): Promise<ApiError> {
   let detail = '';
+  let code: string | undefined;
   try {
-    const body = (await response.json()) as { detail?: unknown };
-    if (typeof body.detail === 'string') {
-      detail = body.detail;
-    } else if (Array.isArray(body.detail)) {
-      detail = body.detail
-        .map((item) => (typeof item === 'object' && item !== null && 'msg' in item ? String(item.msg) : ''))
-        .filter(Boolean)
-        .join('; ');
+    const body = (await response.json()) as { detail?: unknown; error?: unknown };
+    const structured = body.error;
+    if (typeof structured === 'object' && structured !== null) {
+      const fields = structured as { code?: unknown; message?: unknown };
+      if (typeof fields.code === 'string' && fields.code) code = fields.code;
+      if (typeof fields.message === 'string') detail = fields.message;
     }
+    if (!detail) detail = detailText(body.detail);
   } catch (error) {
     if (!(error instanceof SyntaxError)) {
       throw error;
@@ -172,6 +218,7 @@ async function getApiError(response: Response): Promise<ApiError> {
     response.status,
     detail,
     detail || `Request failed (${response.status} ${response.statusText})`,
+    code,
   );
 }
 
@@ -258,16 +305,35 @@ export function adaptBackendAnalysis(result: BackendAnalysisResponse): AnalysisR
     chart_points: chartPoints,
     annual_points: [],
     confidence_band: [],
+    statistics: result.statistics ?? null,
+    forecast: result.forecast ?? null,
   };
 }
 
+/**
+ * The catalog is the union of `/variables` and `/nasa/variables`. If one of the two fails, the other
+ * still fills the catalog; only when both fail (or both are empty) is it an error. Ids are unique.
+ */
 export async function fetchVariables(signal?: AbortSignal): Promise<VariableRecord[]> {
-  const variables = await requestJson<unknown>('/api/v1/variables', { signal });
-  if (!Array.isArray(variables) || !variables.every(isVariableRecord)) {
-    throw new Error('The variable API response does not match the current catalog schema.');
+  const requests = await Promise.allSettled([
+    requestJson<unknown>('/api/v1/variables', { signal }),
+    requestJson<unknown>('/api/v1/nasa/variables', { signal }),
+  ]);
+  const variables: VariableRecord[] = [];
+  const seen = new Set<string>();
+  for (const result of requests) {
+    if (result.status === 'fulfilled' && Array.isArray(result.value) && result.value.every(isVariableRecord)) {
+      for (const record of result.value) {
+        if (seen.has(record.id)) continue;
+        seen.add(record.id);
+        variables.push(record);
+      }
+    }
   }
   if (variables.length === 0) {
-    throw new Error('The backend returned no supported variables.');
+    if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+    const failure = requests.find((result) => result.status === 'rejected');
+    throw failure?.reason ?? new Error('The backend returned no supported variables.');
   }
   return variables;
 }
@@ -299,6 +365,17 @@ export async function fetchAvailability(
   return requestJson<AvailabilityResponse>(`/api/v1/availability?${query}`, { signal });
 }
 
+export async function fetchSavedAnalyses(signal?: AbortSignal): Promise<SavedAnalysisSummary[]> {
+  return requestJson<SavedAnalysisSummary[]>('/api/v1/analyses', { signal });
+}
+
+export async function fetchSavedAnalysis(id: string, signal?: AbortSignal): Promise<AnalysisResponse> {
+  const result = await requestJson<BackendAnalysisResponse>(`/api/v1/analyses/${encodeURIComponent(id)}`, {
+    signal,
+  });
+  return adaptBackendAnalysis(result);
+}
+
 export async function requestAnalysis(
   payload: AnalysisRequest,
   signal?: AbortSignal,
@@ -313,19 +390,7 @@ export async function requestAnalysis(
 }
 
 export async function exportAnalysisCsv(analysis: AnalysisResponse): Promise<void> {
-  const payload: AnalysisRequest = {
-    variable_id: analysis.variable_id,
-    region_id: analysis.region_id,
-    start_date: analysis.start_date,
-    end_date: analysis.end_date,
-    dataset_version: analysis.dataset_version,
-    spatial_query: analysis.spatial_query,
-  };
-  const response = await fetch('/api/v1/analyses/export', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
+  const response = await fetch(`/api/v1/analyses/${encodeURIComponent(analysis.analysis_id)}/export`);
   if (!response.ok) {
     throw await getApiError(response);
   }

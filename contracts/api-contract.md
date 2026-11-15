@@ -45,6 +45,30 @@ The backend uses Meteomatics only. Set `METEOMATICS_USERNAME` and
 `METEOMATICS_PASSWORD` server-side before starting it.
 `METEOMATICS_MODEL` is optional and defaults to `mix`. Restart the backend after
 changing these variables. Credentials must never be sent by the browser.
+The placeholder configuration is in [`backend/.env.example`](../backend/.env.example);
+copy it to a private environment file and enter credentials locally.
+
+Analysis and export requests are limited to four concurrent operations and
+request bodies are limited to 16 KiB. A saturated analysis service returns
+HTTP 503 with `Retry-After: 1`; oversized bodies return HTTP 413.
+
+Errors use a stable shape while retaining `detail` for existing clients:
+
+```json
+{
+  "detail": "Request validation failed",
+  "error": {
+    "code": "invalid_request",
+    "message": "Request validation failed"
+  }
+}
+```
+
+Common error codes include `invalid_request` (422), `not_found` (404),
+`conflict` (409), `request_too_large` (413), `service_unavailable` (503), and
+`upstream_error` (502) or `internal_error` (500). Unexpected errors are logged
+by request path and error type only; internal exception details are not
+returned to callers.
 
 For live Meteomatics analyses:
 
@@ -90,8 +114,36 @@ For live Meteomatics analyses:
   provider archive. Results include that limitation in `quality.warnings`.
 - Availability can confirm a configured parameter, but account access and
   historical coverage are only confirmed by a successful analysis query.
+- A bounded five-minute analysis-response cache is keyed by variable, region,
+  period, dataset version, method version, provider model, selected point
+  geometry, and the statistical parameters (alpha, minimum sample size,
+  estimator, inference method, and direction threshold). Cached analysis
+  responses are reused for CSV export so the exported observations and trend
+  match the displayed result.
+  The provider-series cache is also bounded and keyed by its query filters,
+  model, dataset version, and method version. Both caches are process-local.
 
 Provider configuration failures return HTTP 503; provider request/response
 failures return HTTP 502; unsupported variables and periods over ten years
 return HTTP 422. A requested non-live dataset version returns HTTP 409. Live
 analysis fails explicitly and does not fall back to synthetic values.
+
+## Example request
+
+The JSON body shown above can be submitted to `POST /api/v1/analyses`:
+
+```powershell
+$body = @{
+  variable_id = "air_temperature"
+  region_id = "ceara"
+  start_date = "2015-01-01"
+  end_date = "2023-12-31"
+  dataset_version = "meteomatics-live"
+} | ConvertTo-Json
+
+Invoke-RestMethod `
+  -Uri "http://127.0.0.1:8000/api/v1/analyses" `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body $body
+```

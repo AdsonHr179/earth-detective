@@ -26,8 +26,10 @@ def _hourly_frame(parameter: str, start: str, end: str, value: float) -> pd.Data
 @pytest.fixture(autouse=True)
 def clear_provider_cache():
     meteomatics.clear_cache()
+    main.clear_analysis_cache()
     yield
     meteomatics.clear_cache()
+    main.clear_analysis_cache()
 
 
 def test_temperature_query_uses_center_and_aggregates_hourly_mean(monkeypatch):
@@ -171,6 +173,8 @@ def test_credentials_are_required_before_provider_call(monkeypatch):
 
 
 def test_live_analysis_endpoint_uses_provider_payload(monkeypatch):
+    monkeypatch.setenv("METEOMATICS_USERNAME", "test-user")
+    monkeypatch.setenv("METEOMATICS_PASSWORD", "test-password")
     calls = []
 
     def fake_fetch_monthly_series(*args, **kwargs):
@@ -329,6 +333,8 @@ def test_undefined_wind_direction_mean_is_null(monkeypatch):
 
 
 def test_wind_analysis_does_not_calculate_linear_trend(monkeypatch):
+    monkeypatch.setenv("METEOMATICS_USERNAME", "test-user")
+    monkeypatch.setenv("METEOMATICS_PASSWORD", "test-password")
     def fake_fetch_monthly_series(*args, **kwargs):
         return {
             "series": [
@@ -403,6 +409,8 @@ def test_live_analysis_requires_credentials(monkeypatch):
 
 
 def test_provider_failure_is_reported_without_internal_details(monkeypatch):
+    monkeypatch.setenv("METEOMATICS_USERNAME", "test-user")
+    monkeypatch.setenv("METEOMATICS_PASSWORD", "test-password")
     def fail_request(*args, **kwargs):
         raise meteomatics.MeteomaticsRequestError("sensitive provider response")
 
@@ -420,4 +428,5 @@ def test_provider_failure_is_reported_without_internal_details(monkeypatch):
 
     assert response.status_code == 502
     assert response.json()["detail"] == "Meteomatics data could not be retrieved or parsed"
+    assert response.json()["error"]["code"] == "upstream_error"
     assert "sensitive provider response" not in response.text
