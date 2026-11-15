@@ -1,6 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import TrendChart, { type TrendChartProps } from './TrendChart';
+import ValuesTable from './ValuesTable';
 
 // TEST FIXTURE values, not real observations.
 function monthly(values: Array<number | null>, year = 2020) {
@@ -89,11 +90,6 @@ describe('TrendChart', () => {
     expect(path.match(/M/g)).toHaveLength(2);
     expect(legendLabels()).toContain('No data');
 
-    const table = screen.getByRole('table', { hidden: true });
-    const noData = within(table).getAllByText('no data');
-    expect(noData).toHaveLength(2);
-    expect(within(table).queryByText('0.00')).not.toBeInTheDocument();
-    expect(within(table).getByText('1.00')).toBeInTheDocument();
   });
 
   it('draws grey history only for observations outside the selected period', () => {
@@ -126,11 +122,24 @@ describe('TrendChart', () => {
     expect(legendLabels()).toEqual(['Monthly values']);
   });
 
+});
+
+describe('ValuesTable', () => {
   it('offers the values in a collapsible table', () => {
-    renderChart();
+    render(<ValuesTable points={monthly([1, 2, 3, 4, 5, 6])} unit="unit-a" variableName="Variable" />);
     const details = screen.getByText('Show the values as a table').closest('details');
     expect(details).not.toBeNull();
     expect(details).not.toHaveAttribute('open');
     expect(within(screen.getByRole('table', { hidden: true })).getAllByRole('row', { hidden: true })).toHaveLength(7);
+  });
+
+  it('writes no data for a missing month and never a zero', () => {
+    render(<ValuesTable points={monthly([1, null, null, 4])} unit="unit-a" variableName="Variable" />);
+
+    const table = screen.getByRole('table', { hidden: true });
+    expect(within(table).getAllByText('no data')).toHaveLength(2);
+    expect(within(table).queryByText('0.00')).not.toBeInTheDocument();
+    expect(within(table).getByText('1.00')).toBeInTheDocument();
+    expect(within(table).getByText('4.00')).toBeInTheDocument();
   });
 });

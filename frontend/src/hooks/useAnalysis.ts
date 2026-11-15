@@ -7,6 +7,7 @@ import {
   type RegionRecord,
 } from '../api/client';
 import { InputError } from '../api/errors';
+import { formatCoordinatePair } from '../lib/format';
 
 export type AnalysisStatus = 'idle' | 'loading' | 'success' | 'no-data' | 'error' | 'stale';
 
@@ -162,7 +163,7 @@ export function useAnalysis({ regions, availability, defaults = DEFAULT_FILTERS 
       updateFilters(
         (f) => ({ ...f, point }),
         point
-          ? `Position selected: ${point.coordinates[1].toFixed(4)}°, ${point.coordinates[0].toFixed(4)}°. Run an analysis to query this point.`
+          ? `Position selected: ${formatCoordinatePair(point.coordinates[1], point.coordinates[0])}. Run an analysis to query this point.`
           : '',
       ),
     [updateFilters],

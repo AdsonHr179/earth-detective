@@ -165,18 +165,25 @@ function boundaryContainsPoint(boundary: VisibleBoundary, point: [number, number
   );
 }
 
-function SelectedRegionViewport({ region }: { region?: RegionRecord }) {
+/** A wider view on small screens, where the map only gets about 40% of the height. */
+function defaultZoom(): number {
+  return typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 899px)').matches
+    ? 5
+    : 6;
+}
+
+function SelectedRegionViewport({ region, zoom }: { region?: RegionRecord; zoom: number }) {
   const map = useMap();
 
   useEffect(() => {
     if (region) {
       map.flyTo(
         [region.center.latitude, region.center.longitude],
-        Math.max(map.getZoom(), 6),
+        Math.max(map.getZoom(), zoom),
         { duration: 0.45 },
       );
     }
-  }, [map, region]);
+  }, [map, region, zoom]);
 
   return null;
 }
@@ -249,6 +256,7 @@ export default function MapStage({
   onSelectPosition,
 }: MapStageProps) {
   const theme = useMemo(() => readMapTheme(), []);
+  const zoom = useMemo(() => defaultZoom(), []);
   const initialRegion = regions.find((region) => region.id === selectedRegion) ?? regions[0];
   const initialCenter: [number, number] = initialRegion
     ? [initialRegion.center.latitude, initialRegion.center.longitude]
@@ -406,7 +414,7 @@ export default function MapStage({
       <MapContainer
         className="interactive-map"
         center={initialCenter}
-        zoom={6}
+        zoom={zoom}
         minZoom={3}
         maxZoom={17}
         scrollWheelZoom
@@ -419,7 +427,7 @@ export default function MapStage({
         <MapAccessibility describedBy="map-keyboard-help" />
         <ViewportBoundsReporter onChange={reportViewportBounds} />
         <MapPositionSelector onSelectPosition={handleMapPositionSelect} />
-        <SelectedRegionViewport region={activeRegion} />
+        <SelectedRegionViewport region={activeRegion} zoom={zoom} />
         {displayedBoundaries.map((boundary) => (
           <GeoJSON
             key={boundary.stateCode}

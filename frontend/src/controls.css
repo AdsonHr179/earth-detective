@@ -25,9 +25,8 @@
 }
 
 .chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  /* chips flow with the brand and the run button, wrapping as one row of controls */
+  display: contents;
 }
 
 .chip-wrap {
@@ -203,12 +202,12 @@
   }
 
   /* 2 x 2 grid of chips so nothing scrolls sideways */
-  .controls-bar,
-  .chips {
+  .controls-bar {
     width: 100%;
   }
 
   .chips {
+    width: 100%;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 6px;

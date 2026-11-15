@@ -9,6 +9,7 @@ import ProvenanceBlock, { ProvenanceLine } from './ProvenanceBlock';
 import QualityBadges from './QualityBadges';
 import StateNotice from './StateNotice';
 import TrendChart from './TrendChart';
+import ValuesTable from './ValuesTable';
 
 export const NO_DATA_TITLE = 'No valid observations';
 export const NO_DATA_TEXT =
@@ -139,6 +140,7 @@ export default function ResultPanel({
         </p>
       </div>
 
+      <ValuesTable points={analysis.chart_points} unit={analysis.unit} variableName={variableName} />
       <details className="more" open>
         <summary>What this does not tell you</summary>
         <ul className="limits">

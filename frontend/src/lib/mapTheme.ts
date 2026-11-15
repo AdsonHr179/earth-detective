@@ -34,7 +34,7 @@ export function readMapTheme(): MapTheme {
   return {
     boundary: { color: regionStroke, fillColor: regionFill, fillOpacity: 0.9, weight: 1.5 },
     selectedBoundary: { color: selectedStroke, fillColor: selectedFill, fillOpacity: 1, weight: 2.5 },
-    pointRing: { color: point, fillColor: point, fillOpacity: 0.16, weight: 3 },
-    pointDot: { color: point, fillColor: point, fillOpacity: 1, weight: 1 },
+    pointRing: { color: point, fillColor: point, fillOpacity: 0.16, weight: 3, pane: 'markerPane' },
+    pointDot: { color: point, fillColor: point, fillOpacity: 1, weight: 1, pane: 'markerPane' },
   };
 }

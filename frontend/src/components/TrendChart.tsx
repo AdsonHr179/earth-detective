@@ -82,10 +82,6 @@ export default function TrendChart({
     applicable: trend.applicable,
   });
 
-  const rows = [...points]
-    .filter((point) => Number.isFinite(parseDate(point.date)))
-    .sort((a, b) => parseDate(a.date) - parseDate(b.date));
-
   if (!scales) {
     return (
       <figure className="chart-figure">
@@ -135,9 +131,13 @@ export default function TrendChart({
     : '';
 
   const trendLabel = line && isValid(trend.rate_per_decade) ? `Trend ${formatSigned(trend.rate_per_decade)} ${unit} per decade` : '';
-  const trendAbove = line ? line.y2 > plot.top + 36 : true;
+  // The trend label and the last-point label sit on opposite sides of each other so they never overlap:
+  // when the line ends above the last observation the trend label goes above it and the point label below.
+  const lastY = last ? scales.y(last.value) : 0;
+  const lineEndsAbove = line ? line.y2 <= lastY : true;
+  const trendLabelAbove = line ? (lineEndsAbove ? line.y2 > plot.top + 14 : line.y2 > plot.bottom - 30) : true;
   const lastLabel = last ? `${formatMonth(last.ms)} · ${formatNumber(last.value)} ${unit}` : '';
-  const lastBelow = last ? scales.y(last.value) <= plot.bottom - 26 : false;
+  const lastBelow = last ? (lineEndsAbove ? lastY <= plot.bottom - 26 : lastY <= plot.top + 14) : false;
 
   const legend: LegendItem[] = [
     { key: 'sel', swatch: 'legend-swatch--selected', label: hasHistory ? 'Selected period' : 'Monthly values' },
@@ -254,7 +254,7 @@ export default function TrendChart({
               <line x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} className="chart-trend" />
               <text
                 x={line.x2 - 4}
-                y={trendAbove ? line.y2 - 12 : line.y2 + 22}
+                y={trendLabelAbove ? line.y2 - 12 : line.y2 + 22}
                 textAnchor="end"
                 className="chart-label chart-halo chart-label--trend"
               >
@@ -293,30 +293,6 @@ export default function TrendChart({
         </figcaption>
       ) : null}
 
-      <details className="more">
-        <summary>Show the values as a table</summary>
-        <div className="table-wrap">
-          <table>
-            <caption className="visually-hidden">
-              {`Monthly values of ${variableName} in ${unit}; months without data are marked no data`}
-            </caption>
-            <thead>
-              <tr>
-                <th scope="col">Month</th>
-                <th scope="col">{unit}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr key={row.date}>
-                  <th scope="row">{formatMonth(row.date)}</th>
-                  <td>{isValid(row.value) ? formatNumber(row.value, 2) : 'no data'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </details>
     </figure>
   );
 }
