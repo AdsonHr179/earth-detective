@@ -1,0 +1,61 @@
+/*
+  Design tokens for the dark, map-first theme.
+  Hex values are the ones measured for WCAG 2.2 AA in the approved preview
+  (design/preview-front-v2/CONTRASTE.md): text pairs >= 4.5:1, UI and chart marks >= 3:1.
+  Chart and state colours come from the Okabe-Ito palette; meaning never relies on colour alone
+  (every series also differs by dash, weight, hatch, icon or text).
+*/
+:root {
+  color-scheme: dark;
+
+  /* surfaces */
+  --color-bg: #0e1417;
+  --color-map: #0a1114;
+  --color-surface: #151d21;
+  --color-raised: #1d282d;
+
+  /* text: on bg 15.8:1, on surface 14.6:1, muted on surface 8.4:1 */
+  --color-text: #e8eef0;
+  --color-muted: #a9b9bf;
+
+  /* UI borders and axes (>= 3:1 on surface and map) */
+  --color-line: #62767f;
+  --color-line-soft: #2c3a41;
+  --color-grid: #26343a;
+
+  /* accents (Okabe-Ito) */
+  --color-accent: #56b4e9;
+  --color-on-accent: #0b1216;
+  --color-orange: #e69f00;
+  --color-vermillion: #f59a6c;
+  --color-ok: #3fd0a0;
+  --color-focus: #f0e442;
+
+  /* chart */
+  --chart-selected: var(--color-accent);
+  --chart-trend: var(--color-orange);
+  --chart-history: #8497a0;
+  --chart-baseline: #b8c6cb;
+  --chart-halo: var(--color-surface);
+  --chart-marker: var(--color-focus);
+
+  /* map (no third-party tiles: flat dark background + IBGE polygons) */
+  --map-region-fill: #131d22;
+  --map-region-stroke: #4a6068;
+  --map-selected-fill: #21343c;
+  --map-selected-stroke: var(--color-accent);
+  --map-point: var(--color-focus);
+  --map-scrim: rgb(10 17 20 / 0.88);
+
+  /* type */
+  --font-sans: Inter, system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+
+  /* shape and size */
+  --radius-chip: 22px;
+  --radius-card: 12px;
+  --radius-small: 8px;
+  --target-min: 44px;
+  --focus-width: 3px;
+  --panel-width: 500px;
+  --shadow-pop: 0 12px 32px rgb(0 0 0 / 0.55);
+}
