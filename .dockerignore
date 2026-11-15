@@ -6,6 +6,7 @@
 **/.env
 **/.env.*
 frontend/dist
+frontend/dist-snapshot
 docs
 tests
 data/*.sqlite3*

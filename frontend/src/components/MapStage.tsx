@@ -21,6 +21,8 @@ export type MapStageProps = {
   /** True when `selectedPosition` is the default region center rather than a choice. */
   isDefaultPoint?: boolean;
   onSelectPosition: (position: GeoJSONPoint) => void;
+  /** Archived records allow panning, but their query point cannot be changed. */
+  readOnly?: boolean;
 };
 
 type VisibleBoundary = {
@@ -254,6 +256,7 @@ export default function MapStage({
   selectedPosition,
   isDefaultPoint = false,
   onSelectPosition,
+  readOnly = false,
 }: MapStageProps) {
   const theme = useMemo(() => readMapTheme(), []);
   const zoom = useMemo(() => defaultZoom(), []);
@@ -426,7 +429,7 @@ export default function MapStage({
         <ZoomControl position="bottomright" />
         <MapAccessibility describedBy="map-keyboard-help" />
         <ViewportBoundsReporter onChange={reportViewportBounds} />
-        <MapPositionSelector onSelectPosition={handleMapPositionSelect} />
+        {!readOnly ? <MapPositionSelector onSelectPosition={handleMapPositionSelect} /> : null}
         <SelectedRegionViewport region={activeRegion} zoom={zoom} />
         {displayedBoundaries.map((boundary) => (
           <GeoJSON
@@ -459,8 +462,9 @@ export default function MapStage({
         ) : null}
       </MapContainer>
       <p className="visually-hidden" id="map-keyboard-help">
-        Click the map to choose the point. With the keyboard, use the arrow keys to move the map and press Enter to
-        choose the point at the center of the view, or type latitude and longitude in the Point menu.
+        {readOnly
+          ? 'Archived observation point. Use arrow keys to pan the map. Panning does not query environmental data or change this record.'
+          : 'Click the map to choose the point. With the keyboard, use the arrow keys to move the map and press Enter to choose the point at the center of the view, or type latitude and longitude in the Point menu.'}
       </p>
       <p className="map-boundary-status" role="status" aria-live="polite">
         {boundaryMessage}
