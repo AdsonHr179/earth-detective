@@ -195,3 +195,27 @@
   border-bottom: 1px solid var(--color-line-soft);
   font-weight: 400;
 }
+
+/* Exploratory projection: Okabe-Ito bluish green, dash-dot, so it differs from the dashed orange trend by colour and by stroke. */
+.chart-forecast {
+  stroke: var(--chart-forecast);
+  stroke-width: 2.6;
+  stroke-dasharray: 12 4 2 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.chart-forecast-dot {
+  fill: var(--chart-forecast);
+}
+
+.chart-label--forecast {
+  fill: var(--chart-forecast);
+}
+
+.legend-swatch--forecast {
+  border-color: var(--chart-forecast);
+  border-top-width: 3px;
+  border-top-style: dashed;
+  border-image: repeating-linear-gradient(90deg, var(--chart-forecast) 0 12px, transparent 12px 16px, var(--chart-forecast) 16px 18px, transparent 18px 22px) 1;
+}

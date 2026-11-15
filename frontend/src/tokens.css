@@ -35,6 +35,7 @@
   /* chart */
   --chart-selected: #56b4e9;
   --chart-trend: var(--color-orange);
+  --chart-forecast: var(--color-ok);
   --chart-history: #8e84a3;
   --chart-baseline: #b8c6cb;
   --chart-halo: var(--color-surface);

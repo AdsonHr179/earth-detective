@@ -117,6 +117,7 @@ export default function ResultPanel({
         trend={trend}
         circular={circular}
         band={analysis.confidence_band}
+        forecast={analysis.forecast}
       />
 
       {analysis.statistics ? <StatisticsBlock statistics={analysis.statistics} unit={analysis.unit} /> : null}

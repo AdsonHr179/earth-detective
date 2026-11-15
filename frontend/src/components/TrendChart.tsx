@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import type { MonthlyForecast } from '../api/client';
 import { useElementWidth } from '../hooks/useElementWidth';
 import {
   buildScales,
@@ -31,7 +32,20 @@ export type TrendChartProps = {
   band?: BandPoint[];
   /** Only drawn when the backend returned a real baseline. */
   baseline?: Baseline | null;
+  /** Only drawn when the backend returned projection points. Never filled in by the app. */
+  forecast?: MonthlyForecast | null;
 };
+
+export const FORECAST_LEGEND = 'Exploratory projection (not an official forecast)';
+
+/** The backtest error in words, or the plain fact that none was reported. */
+export function backtestSentence(forecast: MonthlyForecast, unit: string): string {
+  if (forecast.backtest_mae === null || !Number.isFinite(forecast.backtest_mae)) {
+    return 'No backtest error was reported for this projection.';
+  }
+  const checks = forecast.backtest_count;
+  return `Backtest error: mean absolute error ${formatNumber(forecast.backtest_mae)}${unit ? ` ${unit}` : ''} over ${checks} ${checks === 1 ? 'check' : 'checks'} on past months.`;
+}
 
 const MARGINS = { top: 34, right: 12, bottom: 28, left: 46 };
 
@@ -52,6 +66,7 @@ export default function TrendChart({
   circular = false,
   band = [],
   baseline = null,
+  forecast = null,
 }: TrendChartProps) {
   const reactId = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const { ref, width } = useElementWidth<HTMLDivElement>(520);
@@ -62,17 +77,23 @@ export default function TrendChart({
   const endMs = parseDate(periodEnd);
   const hasBand = band.length > 0;
   const bandValues = band.flatMap((item) => [item.low, item.high]);
-  const yExtent = [...bandValues, ...(baseline ? [baseline.value] : [])];
+  const forecastPoints: ChartPoint[] = (forecast?.points ?? []).map((point) => ({
+    date: point.timestamp,
+    value: Number.isFinite(point.value) ? point.value : null,
+  }));
+  const forecastValues = forecastPoints.flatMap((point) => (isValid(point.value) ? [point.value] : []));
+  const forecastDates = forecastPoints.map((point) => parseDate(point.date)).filter(Number.isFinite);
+  const yExtent = [...bandValues, ...forecastValues, ...(baseline ? [baseline.value] : [])];
   const scales = buildScales(points, {
     width: W,
     height: H,
     margins: MARGINS,
     circular,
-    xExtent: [startMs, endMs],
+    xExtent: [startMs, endMs, ...forecastDates],
     yExtent,
   });
 
-  const description = describeSeries({
+  const description = `${describeSeries({
     variableName,
     regionName,
     unit,
@@ -80,7 +101,7 @@ export default function TrendChart({
     ratePerDecade: trend.rate_per_decade,
     significant: trend.significant,
     applicable: trend.applicable,
-  });
+  })}${forecast && forecastValues.length > 0 ? ` An exploratory projection of ${forecastValues.length} months is drawn as a dash-dot line after the observations. It is not an official forecast. ${backtestSentence(forecast, unit)}` : ''}`;
 
   if (!scales) {
     return (
@@ -104,6 +125,8 @@ export default function TrendChart({
   const selectedSegments = buildSegments(selectedPoints, scales, { circular });
   const historySegments = hasHistory ? buildSegments(points, scales, { circular }) : [];
   const gaps = findGaps(points, scales);
+  const forecastSegments = forecastValues.length > 0 ? buildSegments(forecastPoints, scales) : [];
+  const forecastEnd = forecastSegments.length > 0 ? forecastSegments[forecastSegments.length - 1].slice(-1)[0] : null;
   const line = trend.applicable ? trendLine(selectedPoints, trend.rate_per_decade, scales) : null;
   const last = lastValidPoint(points, startMs, endMs);
   const { plot } = scales;
@@ -144,6 +167,9 @@ export default function TrendChart({
     ...(hasHistory ? [{ key: 'hist', swatch: 'legend-swatch--history', label: 'History (outside the period)' }] : []),
     ...(line ? [{ key: 'trend', swatch: 'legend-swatch--trend', label: 'Trend (reported slope)' }] : []),
     ...(baseline ? [{ key: 'base', swatch: 'legend-swatch--baseline', label: baseline.label }] : []),
+    ...(forecastValues.length > 0
+      ? [{ key: 'forecast', swatch: 'legend-swatch--forecast', label: FORECAST_LEGEND }]
+      : []),
     ...(hasBand ? [{ key: 'band', swatch: 'legend-swatch--band', label: 'Uncertainty band' }] : []),
     ...(gaps.length > 0 ? [{ key: 'gap', swatch: 'legend-swatch--gap', label: 'No data' }] : []),
   ];
@@ -249,6 +275,23 @@ export default function TrendChart({
             <circle key={`iso${point.date}`} cx={point.x} cy={point.y} r="3" className="chart-dot" />
           ))}
 
+          {forecastEnd ? (
+            <>
+              <path d={segmentsToPath(forecastSegments)} className="chart-forecast" fill="none" />
+              {isolatedPoints(forecastSegments).map((point) => (
+                <circle key={`fiso${point.date}`} cx={point.x} cy={point.y} r="3.5" className="chart-forecast-dot" />
+              ))}
+              <text
+                x={Math.min(forecastEnd.x, plot.right)}
+                y={forecastEnd.y + (forecastEnd.y > plot.top + 22 ? -10 : 20)}
+                textAnchor="end"
+                className="chart-label chart-halo chart-label--forecast"
+              >
+                Projection
+              </text>
+            </>
+          ) : null}
+
           {line ? (
             <>
               <line x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} className="chart-trend" />
@@ -287,9 +330,17 @@ export default function TrendChart({
           </li>
         ))}
       </ul>
-      {line ? (
+      {line || forecastEnd ? (
         <figcaption className="chart-note">
-          The trend line uses the slope reported by the service and is drawn through the mean of the plotted values.
+          {line
+            ? 'The trend line uses the slope reported by the service and is drawn through the mean of the plotted values. '
+            : ''}
+          {forecast && forecastEnd ? (
+            <>
+              The projection comes from the service ({forecast.method}); it is not drawn from the trend line.{' '}
+              {backtestSentence(forecast, unit)}
+            </>
+          ) : null}
         </figcaption>
       ) : null}
 
