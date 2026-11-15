@@ -68,3 +68,13 @@ export function formatRetrievedAt(value: string): string {
   if (!Number.isFinite(ms)) return value;
   return `${new Date(ms).toISOString().slice(0, 16).replace('T', ' ')} UTC`;
 }
+
+/** '2015–2023' for whole calendar years, otherwise 'start to end' as ISO dates. */
+export function formatPeriodShort(startDate: string, endDate: string): string {
+  if (startDate.endsWith('-01-01') && endDate.endsWith('-12-31')) {
+    return startDate.slice(0, 4) === endDate.slice(0, 4)
+      ? startDate.slice(0, 4)
+      : `${startDate.slice(0, 4)}–${endDate.slice(0, 4)}`;
+  }
+  return `${startDate || '?'} to ${endDate || '?'}`;
+}
