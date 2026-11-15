@@ -44,6 +44,7 @@ from app.schemas import (
 from app.services import analysis_store, nasa, nasa_analysis
 from app.services.meteomatics import (
     DATASET_VERSION as METEOMATICS_DATASET_VERSION,
+    MAX_PERIOD_DAYS as METEOMATICS_MAX_PERIOD_DAYS,
     METHOD_VERSION as METEOMATICS_METHOD_VERSION,
     SOURCE_URL as METEOMATICS_SOURCE_URL,
     MeteomaticsConfigurationError,
@@ -75,10 +76,6 @@ logger = logging.getLogger(__name__)
 _ANALYSIS_SEMAPHORE = threading.BoundedSemaphore(MAX_CONCURRENT_ANALYSES)
 _ANALYSIS_CACHE: OrderedDict[tuple, tuple[float, AnalysisResponse]] = OrderedDict()
 _ANALYSIS_CACHE_LOCK = threading.Lock()
-
-
-class RequestTooLargeError(Exception):
-    pass
 
 
 class RequestSizeLimitMiddleware:
@@ -122,7 +119,7 @@ class RequestSizeLimitMiddleware:
             if message["type"] == "http.request":
                 received_bytes += len(message.get("body", b""))
                 if received_bytes > self.max_body_bytes:
-                    raise RequestTooLargeError()
+                    raise HTTPException(status_code=413, detail="Request body exceeds the allowed size")
             return message
 
         await self.app(scope, limited_receive, send)
@@ -178,17 +175,6 @@ async def handle_validation_error(
     if issues:
         detail = f"{detail}: {'; '.join(issues)}"
     return _error_response(422, "invalid_request", detail)
-
-
-@app.exception_handler(RequestTooLargeError)
-async def handle_oversized_request(
-    _request: Request, _exc: RequestTooLargeError
-) -> JSONResponse:
-    return _error_response(
-        413,
-        "request_too_large",
-        "Request body exceeds the allowed size",
-    )
 
 
 @app.exception_handler(sqlite3.Error)
@@ -419,6 +405,8 @@ def _validate_analysis_request(
     if start_date > end_date:
         raise HTTPException(status_code=422, detail="start_date must be before or equal to end_date")
 
+    if (end_date - start_date).days + 1 > METEOMATICS_MAX_PERIOD_DAYS:
+        raise HTTPException(status_code=422, detail="Meteomatics analysis periods cannot exceed ten years.")
     if not supported_variable(variable_id):
         raise HTTPException(
             status_code=422,

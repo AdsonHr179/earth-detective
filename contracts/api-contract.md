@@ -30,8 +30,9 @@ The API uses `/api/v1`. Health is available at `/health` and `/api/v1/health`.
 Both dates are inclusive ISO calendar dates. `spatial_query` is optional and defaults to
 the catalog center. Point coordinates are WGS 84 `[longitude, latitude]`. Region IDs provide
 map context for a grid cell or model point. `dataset_version` can be omitted to select
-the provider's configured version. POWER accepts up to 120 complete months, excludes
+the provider's configured version. POWER accepts up to 360 complete months, excludes
 partial edge months and uses the last complete calendar year as its catalog upper bound.
+Authenticated NASA archives retain the 120-month limit.
 
 ## Response and quality
 
@@ -51,7 +52,7 @@ and describes returned monthly values. Hourly coverage is available separately f
 POWER records the requested point and, in `quality.provider_metadata`, the query URL,
 source API version, canonical provider response SHA-256 and time standard. `retrieved_at`
 records UTC acquisition. `dataset_version` identifies the product route. The POWER
-response hash identifies the acquired content.
+response hash identifies the acquired content, excluding request processing times.
 
 ## Trend semantics
 
