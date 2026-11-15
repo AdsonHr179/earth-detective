@@ -1,21 +1,23 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import os
 import time
 from calendar import monthrange
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime, timezone
 from functools import lru_cache
 from threading import Lock
-from urllib.parse import urlsplit
+from urllib.parse import urlencode, urlsplit
 
 import aiohttp
 import h5py
 import httpx
 import numpy as np
 from fsspec.implementations.http import HTTPFileSystem
+from curl_cffi.requests.exceptions import RequestException as FetcherRequestError
 from scrapling.fetchers import Fetcher
 
 from app.schemas import SeriesPoint, VariableCatalogItem
@@ -119,7 +121,7 @@ def _json(url: str, params: dict) -> dict:
         if not isinstance(payload, dict):
             raise NasaDataError("NASA returned an unexpected data format.")
         return payload
-    except (ValueError, OSError, RuntimeError) as exc:
+    except (ValueError, OSError, RuntimeError, FetcherRequestError) as exc:
         raise NasaDataError("NASA data could not be retrieved or parsed.") from exc
 
 
@@ -279,37 +281,63 @@ def _archive_values(product: Product, months: list[date], latitude: float, longi
     return values
 
 
-def _power_values(months: list[date], latitude: float, longitude: float) -> dict[date, float | None]:
-    payload = _json(POWER, {
+def _power_values(
+    months: list[date], latitude: float, longitude: float,
+) -> tuple[dict[date, float], dict[str, str]]:
+    params = {
         "parameters": "T2M", "community": "AG", "longitude": longitude, "latitude": latitude,
         "format": "JSON", "start": months[0].year, "end": months[-1].year,
-    })
+    }
+    payload = _json(POWER, params)
     try:
         header = payload["header"]
         if header.get("sources") != ["MERRA2"]:
             raise NasaDataError("The NASA POWER response does not identify MERRA-2 as its sole source.")
+        if payload["parameters"]["T2M"]["units"] != "C":
+            raise NasaDataError("NASA POWER returned an unexpected temperature unit.")
         missing = header["fill_value"]
+        if type(missing) not in (int, float) or not math.isfinite(missing):
+            raise NasaDataError("NASA POWER returned an invalid missing-value marker.")
         months_by_key = payload["properties"]["parameter"]["T2M"]
         values = {}
         for month in months:
             value = months_by_key.get(month.strftime("%Y%m"))
-            if isinstance(value, (int, float)) and value != missing and math.isfinite(value):
+            if type(value) in (int, float) and value != missing and math.isfinite(value):
                 values[month] = float(value)
-        return values
-    except (KeyError, TypeError, AttributeError) as exc:
+        # Hash canonical JSON so whitespace changes do not change the revision fingerprint.
+        encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        provenance = {
+            "query_url": f"{POWER}?{urlencode(params)}",
+            "response_sha256": hashlib.sha256(encoded).hexdigest(),
+            "source_api_version": header["api"]["version"],
+            "time_standard": header["time_standard"],
+        }
+        return values, provenance
+    except (KeyError, TypeError, AttributeError, OverflowError) as exc:
         raise NasaDataError("NASA POWER returned an unexpected monthly series.") from exc
 
 
-def monthly_series(product: Product, months: list[date], latitude: float, longitude: float) -> list[SeriesPoint]:
-    values = (
-        _archive_values(product, months, latitude, longitude) if product.collection
-        else _power_values(months, latitude, longitude)
+@dataclass(frozen=True)
+class MonthlyObservations:
+    series: list[SeriesPoint]
+    retrieved_at: str
+    provenance: dict[str, str]
+
+
+def monthly_series(product: Product, months: list[date], latitude: float, longitude: float) -> MonthlyObservations:
+    if product.collection:
+        values, provenance = _archive_values(product, months, latitude, longitude), {"collection": product.collection}
+    else:
+        values, provenance = _power_values(months, latitude, longitude)
+    return MonthlyObservations(
+        series=[
+            SeriesPoint(
+                timestamp=month.isoformat(), value=values.get(month), unit=product.unit,
+                quality_flags="ok" if values.get(month) is not None else "missing",
+                coverage_fraction=1.0 if values.get(month) is not None else 0.0,
+            )
+            for month in months
+        ],
+        retrieved_at=datetime.now(timezone.utc).isoformat(),
+        provenance=provenance,
     )
-    return [
-        SeriesPoint(
-            timestamp=month.isoformat(), value=values.get(month), unit=product.unit,
-            quality_flags="ok" if values.get(month) is not None else "missing",
-            coverage_fraction=1.0 if values.get(month) is not None else 0.0,
-        )
-        for month in months
-    ]

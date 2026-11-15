@@ -24,7 +24,8 @@ def _hourly_frame(parameter: str, start: str, end: str, value: float) -> pd.Data
 
 
 @pytest.fixture(autouse=True)
-def clear_provider_cache():
+def clear_provider_cache(monkeypatch):
+    monkeypatch.setenv("ENABLE_UNVERIFIED_PROVIDERS", "1")
     meteomatics.clear_cache()
     main.clear_analysis_cache()
     yield

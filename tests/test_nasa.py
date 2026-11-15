@@ -17,7 +17,11 @@ def test_public_nasa_analysis_exposes_statistics_and_forecast(monkeypatch):
     def power_response(url, params):
         assert url == nasa.POWER and params["parameters"] == "T2M"
         return {
-            "header": {"sources": ["MERRA2"], "fill_value": -999},
+            "header": {
+                "sources": ["MERRA2"], "fill_value": -999, "api": {"version": "synthetic"},
+                "time_standard": "LST",
+            },
+            "parameters": {"T2M": {"units": "C"}},
             "properties": {"parameter": {"T2M": {
                 f"{year}{month:02d}": 20 + month
                 for year in range(2020, 2024) for month in range(1, 13)

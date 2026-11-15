@@ -21,7 +21,7 @@ logging.getLogger(meteomatics_api.__name__).setLevel(logging.WARNING)
 
 SOURCE_URL = "https://www.meteomatics.com/en/api/getting-started/"
 DATASET_VERSION = "meteomatics-live"
-METHOD_VERSION = "meteomatics-hourly-monthly-v2"
+METHOD_VERSION = "meteomatics-hourly-monthly-v3"
 MAX_PERIOD_DAYS = 3660
 MIN_MONTHLY_COVERAGE = 0.9
 CACHE_MAX_SIZE = 32
@@ -140,6 +140,8 @@ def _month_series(
             pd.to_numeric(frame[parameter], errors="coerce").to_numpy(),
             index=pd.DatetimeIndex(pd.to_datetime(timestamps, utc=True)),
         )
+        values = values[values.index.notna() & (values.index == values.index.floor("h"))]
+        values = values.mask(values.isin([float("inf"), float("-inf")]))
         values = values.groupby(level=0).mean().sort_index()
 
     periods = pd.period_range(start=start_date.isoformat(), end=end_date.isoformat(), freq="M")
@@ -165,7 +167,8 @@ def _month_series(
         valid_hours = int(month_values.index.nunique())
         total_valid_hours += valid_hours
         coverage = valid_hours / expected_month_hours if expected_month_hours else 0.0
-        complete = coverage >= MIN_MONTHLY_COVERAGE
+        threshold = 1.0 if aggregation == "sum" else MIN_MONTHLY_COVERAGE
+        complete = coverage >= threshold and selected_start == month_start and selected_end == month_end
         value = None
         quality_flags = "ok" if complete else "insufficient_hourly_coverage"
         if complete and not month_values.empty:
@@ -181,6 +184,9 @@ def _month_series(
                     value = math.degrees(math.atan2(mean_sin, mean_cos)) % 360.0
                 else:
                     quality_flags = "undefined_circular_mean"
+        if value is not None and not math.isfinite(value):
+            value = None
+            quality_flags = "nonfinite_aggregate"
 
         points.append(
             {
@@ -235,22 +241,21 @@ def _fetch_uncached(
             "Meteomatics could not fulfill the data request. Check account access, product coverage, and dates."
         ) from exc
 
-    result = _month_series(
-        frame,
-        spec.parameter,
-        spec.aggregation,
-        spec.unit,
-        start_date,
-        end_date,
-    )
+    try:
+        result = _month_series(frame, spec.parameter, spec.aggregation, spec.unit, start_date, end_date)
+    except (ValueError, TypeError, OverflowError) as exc:
+        raise MeteomaticsResponseError("Invalid timestamp or aggregate in the Meteomatics response.") from exc
     warnings = [
         "Values represent the Meteomatics grid at the selected point, not an area-weighted regional average.",
         "The live Meteomatics model response is not an immutable archived dataset; repeated requests may differ.",
     ]
     if any(point["quality_flags"] == "insufficient_hourly_coverage" for point in result["series"]):
         warnings.append(
-            "Months with less than 90% valid hourly coverage are returned as null, not as zero."
+            "Partial calendar months and months below the hourly coverage threshold are null. "
+            "Totals require 100% coverage; means require 90%."
         )
+    if any(point["quality_flags"] == "nonfinite_aggregate" for point in result["series"]):
+        warnings.append("A non-finite monthly aggregate was marked missing.")
     if any(point["quality_flags"] == "undefined_circular_mean" for point in result["series"]):
         warnings.append(
             "A month with a mathematically undefined circular mean is returned as null."

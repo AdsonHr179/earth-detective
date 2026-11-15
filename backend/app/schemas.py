@@ -4,7 +4,8 @@ import math
 from datetime import date
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_serializer, model_validator
+from typing_extensions import TypedDict
 
 
 class VariableCatalogItem(BaseModel):
@@ -110,6 +111,48 @@ class TrendResult(BaseModel):
     estimator: str
     inference_method: str
     significant: bool | None
+    inference_status: Literal["validated", "descriptive", "insufficient_data", "unsupported"] | None = None
+    inference_reason: str | None = None
+
+    @model_validator(mode="after")
+    def require_consistent_inference(self) -> "TrendResult":
+        status = self.inference_status
+        if status is None and not self.model_fields_set.intersection({"inference_status", "inference_reason"}):
+            return self
+        if status is None or "inference_reason" not in self.model_fields_set:
+            raise ValueError("Both inference fields are required for a new result")
+
+        evidence = (self.p_value, self.confidence_interval, self.significant)
+        if status == "validated":
+            if not self.applicable or self.slope_per_decade is None or any(item is None for item in evidence):
+                raise ValueError("Validated inference requires a slope and complete inferential evidence")
+        else:
+            if not self.inference_reason or any(item is not None for item in evidence):
+                raise ValueError("Restricted inference requires a reason and null inferential fields")
+            if status == "descriptive":
+                if not self.applicable or self.slope_per_decade is None:
+                    raise ValueError("Descriptive trends require an applicable slope")
+            elif self.applicable or self.slope_per_decade is not None or self.direction != "undetermined":
+                raise ValueError("Unavailable trends require a null slope and undetermined direction")
+        return self
+
+    @model_serializer(mode="wrap")
+    def preserve_legacy_shape(self, handler):
+        result = handler(self)
+        if self.inference_status is None:
+            result.pop("inference_status", None)
+            result.pop("inference_reason", None)
+        return result
+
+
+class RequestedPeriod(TypedDict):
+    start_date: str
+    end_date: str
+
+
+class EffectivePeriod(TypedDict):
+    start_date: str | None
+    end_date: str | None
 
 
 class AnalysisResponse(BaseModel):
@@ -119,8 +162,8 @@ class AnalysisResponse(BaseModel):
     method_version: str
     variable_id: str
     region_id: str
-    requested_period: dict[str, str]
-    effective_period: dict[str, str]
+    requested_period: RequestedPeriod
+    effective_period: EffectivePeriod
     source: str
     product: str
     source_url: str
