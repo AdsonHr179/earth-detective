@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  fetchSavedAnalysis,
   requestAnalysis,
   type AnalysisResponse,
   type AvailabilityResponse,
@@ -265,6 +266,59 @@ export function useAnalysis({ regions, availability, defaults = DEFAULT_FILTERS 
     [cancelInFlight, commitFilters, setPhase],
   );
 
+  /**
+   * Opens a result the backend saved earlier. The choices are set to the ones it was made with, so it
+   * is shown as current (not out of date). A failure is reported like any other and keeps nothing stale.
+   */
+  const loadSaved = useCallback(
+    (analysisId: string) => {
+      cancelInFlight();
+      lastRequestRef.current = null;
+      setError(null);
+
+      const controller = new AbortController();
+      controllerRef.current = controller;
+      const requestNumber = requestIdRef.current;
+      const isCurrent = () => !controller.signal.aborted && requestNumber === requestIdRef.current;
+
+      setResult(null);
+      setPhase('loading');
+      setMessage('Opening the saved analysis…');
+
+      fetchSavedAnalysis(analysisId, controller.signal)
+        .then((analysis) => {
+          if (!isCurrent()) return;
+          controllerRef.current = null;
+          const next: AnalysisFilters = {
+            variableId: analysis.variable_id,
+            regionId: analysis.region_id,
+            point: analysis.spatial_query ?? null,
+            startDate: analysis.start_date,
+            endDate: analysis.end_date,
+          };
+          commitFilters(next);
+          lastRequestRef.current = next;
+          const hasData = (analysis.chart_points ?? []).some((point) => point.value !== null);
+          setResult({ analysis, kind: hasData ? 'success' : 'no-data', key: requestKey(next, regionsRef.current) });
+          setPhase('idle');
+          setMessage(
+            hasData
+              ? 'Saved analysis opened. The choices were set to the ones it was made with.'
+              : 'The saved analysis has no valid observations.',
+          );
+        })
+        .catch((failure: unknown) => {
+          if (!isCurrent()) return;
+          controllerRef.current = null;
+          setResult(null);
+          setError(failure);
+          setPhase('error');
+          setMessage(failure instanceof Error ? failure.message : 'The saved analysis could not be opened.');
+        });
+    },
+    [cancelInFlight, commitFilters, setPhase],
+  );
+
   const retry = useCallback(() => {
     const last = lastRequestRef.current;
     if (last) run(last);
@@ -317,6 +371,7 @@ export function useAnalysis({ regions, availability, defaults = DEFAULT_FILTERS 
     setEndDate,
     updateFilters,
     run,
+    loadSaved,
     retry,
     cancel,
     reset,

@@ -60,6 +60,7 @@ function App() {
     setEndDate,
     updateFilters,
     run,
+    loadSaved,
     retry,
     cancel,
     reset,
@@ -124,6 +125,10 @@ function App() {
   const handleRun = () => {
     setSheetExpanded(true);
     run();
+  };
+  const handleOpenSaved = (analysisId: string) => {
+    setSheetExpanded(true);
+    loadSaved(analysisId);
   };
   const handleRetry = () => {
     setSheetExpanded(true);
@@ -227,6 +232,7 @@ function App() {
           onEndDate={setEndDate}
           onPoint={setPoint}
           onUseRegionCenter={() => setPoint(null)}
+          onOpenSaved={handleOpenSaved}
           run={compact ? undefined : runButton}
         />
       }

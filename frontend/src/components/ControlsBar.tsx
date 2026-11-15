@@ -2,6 +2,7 @@ import type { AvailabilityResponse, GeoJSONPoint, RegionRecord, VariableRecord }
 import { formatCoordinatePair, formatPeriodShort } from '../lib/format';
 import ChipMenu from './ChipMenu';
 import PointFields from './PointFields';
+import SavedAnalysesMenu from './SavedAnalysesMenu';
 
 export type ControlsBarProps = {
   variables: VariableRecord[];
@@ -21,6 +22,8 @@ export type ControlsBarProps = {
   onEndDate: (value: string) => void;
   onPoint: (point: GeoJSONPoint) => void;
   onUseRegionCenter: () => void;
+  /** Opens a saved result by id. When missing, the Saved chip is not shown. */
+  onOpenSaved?: (analysisId: string) => void;
   /** Desktop: the run button floats here. On mobile it lives in the result sheet instead. */
   run?: { onRun: () => void; disabled: boolean; attention: boolean };
 };
@@ -56,6 +59,7 @@ export default function ControlsBar({
   onEndDate,
   onPoint,
   onUseRegionCenter,
+  onOpenSaved,
   run,
 }: ControlsBarProps) {
   const variable = variables.find((item) => item.id === variableId);
@@ -176,6 +180,21 @@ export default function ControlsBar({
             />
           )}
         </ChipMenu>
+
+        {onOpenSaved ? (
+          <div className="chip-wrap--saved">
+            <ChipMenu label="Results" value="Saved analyses">
+              {({ close }) => (
+                <SavedAnalysesMenu
+                  variables={variables}
+                  regions={regions}
+                  onSelect={onOpenSaved}
+                  onDone={close}
+                />
+              )}
+            </ChipMenu>
+          </div>
+        ) : null}
       </div>
 
       {run ? (
