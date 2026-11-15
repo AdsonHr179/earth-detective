@@ -8,6 +8,7 @@ import CitationBlock from './CitationBlock';
 import ProvenanceBlock, { ProvenanceLine } from './ProvenanceBlock';
 import QualityBadges from './QualityBadges';
 import StateNotice from './StateNotice';
+import StatisticsBlock from './StatisticsBlock';
 import TrendChart from './TrendChart';
 import ValuesTable from './ValuesTable';
 
@@ -117,6 +118,8 @@ export default function ResultPanel({
         circular={circular}
         band={analysis.confidence_band}
       />
+
+      {analysis.statistics ? <StatisticsBlock statistics={analysis.statistics} unit={analysis.unit} /> : null}
 
       <QualityBadges analysis={analysis} />
 
