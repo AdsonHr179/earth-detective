@@ -1,0 +1,66 @@
+/*
+  Design tokens for the dark, map-first theme, in the project's violet identity (deck 'Investigar mudanças ambientais'):
+  brand violets #7030A0/#9400D3 are decorative only (fail 3:1 as UI lines on dark); UI accent is #B266FF (5.6:1 on surface).
+  Hex values are the ones measured for WCAG 2.2 AA in the approved preview
+  (design/preview-front-v2/CONTRASTE.md): text pairs >= 4.5:1, UI and chart marks >= 3:1.
+  Chart and state colours come from the Okabe-Ito palette; meaning never relies on colour alone
+  (every series also differs by dash, weight, hatch, icon or text).
+*/
+:root {
+  color-scheme: dark;
+
+  /* surfaces */
+  --color-bg: #0b0714;
+  --color-map: #07040e;
+  --color-surface: #170c24;
+  --color-raised: #241338;
+
+  /* text: on bg 15.8:1, on surface 14.6:1, muted on surface 8.4:1 */
+  --color-text: #f5f7fa;
+  --color-muted: #c9c0da;
+
+  /* UI borders and axes (>= 3:1 on surface and map) */
+  --color-line: #7e6f99;
+  --color-line-soft: #36204f;
+  --color-grid: #2a1a40;
+
+  /* accents (Okabe-Ito) */
+  --color-accent: #b266ff;
+  --color-on-accent: #12041f;
+  --color-orange: #e69f00;
+  --color-vermillion: #f59a6c;
+  --color-ok: #3fd0a0;
+  --color-focus: #f0e442;
+
+  /* chart */
+  --chart-selected: #56b4e9;
+  --chart-trend: var(--color-orange);
+  --chart-forecast: var(--color-ok);
+  --chart-history: #8e84a3;
+  --chart-baseline: #b8c6cb;
+  --chart-halo: var(--color-surface);
+  --chart-marker: var(--color-focus);
+
+  /* map (no third-party tiles: flat dark background + IBGE polygons) */
+  --map-region-fill: #120a1f;
+  --map-region-stroke: #5a4a78;
+  --map-selected-fill: #2a1647;
+  --map-selected-stroke: #b266ff;
+  --map-point: var(--color-focus);
+  --map-scrim: rgb(7 4 14 / 0.88);
+
+  /* type */
+  --font-display: Montserrat, Inter, system-ui, 'Segoe UI', sans-serif;
+  --brand-violet: #7030a0;
+  --brand-glow: #9400d3;
+  --font-sans: Inter, system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+
+  /* shape and size */
+  --radius-chip: 22px;
+  --radius-card: 12px;
+  --radius-small: 8px;
+  --target-min: 44px;
+  --focus-width: 3px;
+  --panel-width: 500px;
+  --shadow-pop: 0 12px 32px rgb(0 0 0 / 0.55);
+}

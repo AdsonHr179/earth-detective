@@ -1,0 +1,161 @@
+/* Map: flat dark background, IBGE polygons, no third-party tiles. */
+.map-layer {
+  /* keep Leaflet's internal z-indexes from covering the floating controls */
+  isolation: isolate;
+  z-index: 0;
+}
+
+.map-root {
+  position: absolute;
+  inset: 0;
+}
+
+.map-layer .interactive-map,
+.map-layer .leaflet-container {
+  width: 100%;
+  height: 100%;
+  background: var(--color-map);
+  font-family: var(--font-sans);
+  cursor: crosshair;
+}
+
+.map-layer .leaflet-container:focus-visible {
+  outline: var(--focus-width) solid var(--color-focus);
+  outline-offset: -4px;
+}
+
+.map-layer .leaflet-container a {
+  color: var(--color-accent);
+}
+
+/* Zoom buttons: dark and at least 44px */
+.map-layer .leaflet-bar {
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-small);
+  box-shadow: none;
+  overflow: hidden;
+}
+
+.map-layer .leaflet-bar a,
+.map-layer .leaflet-bar a:hover {
+  width: var(--target-min);
+  height: var(--target-min);
+  line-height: var(--target-min);
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-bottom: 1px solid var(--color-line-soft);
+  font-size: 20px;
+}
+
+.map-layer .leaflet-bar a:hover {
+  background: var(--color-raised);
+}
+
+.map-layer .leaflet-bar a.leaflet-disabled {
+  color: var(--color-muted);
+  background: var(--color-surface);
+}
+
+.map-layer .leaflet-bar a:focus-visible {
+  outline: var(--focus-width) solid var(--color-focus);
+  outline-offset: -3px;
+}
+
+.map-layer .leaflet-bottom.leaflet-right {
+  margin-bottom: 34px;
+}
+
+.map-layer .leaflet-tooltip {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-line);
+  box-shadow: none;
+}
+
+.map-layer .leaflet-tooltip-top::before {
+  border-top-color: var(--color-line);
+}
+
+.leaflet-interactive:focus {
+  outline: none;
+}
+
+.map-boundary-status,
+.map-attribution {
+  position: absolute;
+  bottom: 0;
+  z-index: 450;
+  margin: 0;
+  padding: 3px 8px;
+  font-size: 12px;
+  color: var(--color-muted);
+  background: var(--map-scrim);
+}
+
+.map-boundary-status {
+  left: 0;
+  max-width: calc(100% - 190px);
+  border-top-right-radius: 6px;
+}
+
+.map-attribution {
+  right: 0;
+  border-top-left-radius: 6px;
+}
+
+.map-attribution a {
+  color: var(--color-accent);
+}
+
+.map-placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--color-muted);
+  font-size: 14px;
+}
+
+.point-readout {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 0 30px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--map-scrim);
+  font-size: 13px;
+  color: var(--color-muted);
+}
+
+.point-readout strong {
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 899px) {
+  .map-boundary-status {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .map-attribution {
+    font-size: 11px;
+  }
+
+  /* the Point chip already shows the coordinates; keep the live readout for screen readers only */
+  .point-readout {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}

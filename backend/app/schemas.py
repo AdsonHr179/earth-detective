@@ -132,3 +132,39 @@ class AnalysisResponse(BaseModel):
     trend: TrendResult
     quality: dict[str, Any]
     explanation: dict[str, str]
+
+
+class DescriptiveStatistics(BaseModel):
+    count: int
+    mean: float
+    median: float
+    min: float
+    max: float
+    standard_deviation: float | None
+
+
+class ForecastPoint(BaseModel):
+    timestamp: str
+    value: float
+
+
+class MonthlyForecast(BaseModel):
+    method: str
+    points: list[ForecastPoint]
+    backtest_mae: float | None
+    backtest_count: int
+
+
+class NasaAnalysisResponse(AnalysisResponse):
+    statistics: DescriptiveStatistics | None
+    forecast: MonthlyForecast | None
+
+
+class SavedAnalysisSummary(BaseModel):
+    analysis_id: str
+    variable_id: str
+    region_id: str
+    product: str
+    start_date: date
+    end_date: date
+    retrieved_at: str

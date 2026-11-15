@@ -20,6 +20,7 @@ from requests.exceptions import RequestException
 logging.getLogger(meteomatics_api.__name__).setLevel(logging.WARNING)
 
 SOURCE_URL = "https://www.meteomatics.com/en/api/getting-started/"
+DATASET_VERSION = "meteomatics-live"
 METHOD_VERSION = "meteomatics-hourly-monthly-v2"
 MAX_PERIOD_DAYS = 3660
 MIN_MONTHLY_COVERAGE = 0.9
@@ -96,6 +97,11 @@ def configured_model() -> str:
     if not model or not re.fullmatch(r"[A-Za-z0-9_.-]+", model):
         raise MeteomaticsConfigurationError("METEOMATICS_MODEL is invalid.")
     return model
+
+
+def validate_provider_configuration() -> str:
+    _credentials()
+    return configured_model()
 
 
 def _credentials() -> tuple[str, str]:
@@ -307,6 +313,7 @@ def fetch_monthly_series(
         start_date.isoformat(),
         end_date.isoformat(),
         selected_model,
+        DATASET_VERSION,
         METHOD_VERSION,
     )
 
