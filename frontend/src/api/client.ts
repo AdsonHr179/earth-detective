@@ -1,3 +1,5 @@
+import { ApiError } from './errors';
+
 export type VariableRecord = {
   id: string;
   name: string;
@@ -70,7 +72,17 @@ export type AnalysisResponse = {
   start_date: string;
   end_date: string;
   effective_period: string;
+  /** Effective period as separate ISO dates (same period as `effective_period`). */
+  effective_start_date: string;
+  effective_end_date: string;
   provenance: string;
+  source: string;
+  product: string;
+  source_url: string;
+  /** When the backend retrieved the data from the provider; null if the backend did not say. */
+  retrieved_at: string | null;
+  /** The backend's own statement of what the result does not cover; empty if absent. */
+  limitations: string;
   warnings: string[];
   coverage: number;
   valid_observations: number;
@@ -109,6 +121,7 @@ export type BackendAnalysisResponse = {
   source: string;
   product: string;
   source_url: string;
+  retrieved_at?: string | null;
   series: Array<{
     timestamp: string;
     value: number | null;
@@ -137,7 +150,7 @@ export type BackendAnalysisResponse = {
   explanation: { summary: string; limitations: string };
 };
 
-async function getApiError(response: Response): Promise<Error> {
+async function getApiError(response: Response): Promise<ApiError> {
   let detail = '';
   try {
     const body = (await response.json()) as { detail?: unknown };
@@ -155,7 +168,11 @@ async function getApiError(response: Response): Promise<Error> {
     }
   }
 
-  return new Error(detail || `Request failed (${response.status} ${response.statusText})`);
+  return new ApiError(
+    response.status,
+    detail,
+    detail || `Request failed (${response.status} ${response.statusText})`,
+  );
 }
 
 async function requestJson<T>(input: string, init?: RequestInit): Promise<T> {
@@ -206,7 +223,14 @@ export function adaptBackendAnalysis(result: BackendAnalysisResponse): AnalysisR
     start_date: result.requested_period.start_date,
     end_date: result.requested_period.end_date,
     effective_period: `${result.effective_period.start_date} to ${result.effective_period.end_date}`,
+    effective_start_date: result.effective_period.start_date,
+    effective_end_date: result.effective_period.end_date,
     provenance: `${result.source} · ${result.product} · ${result.source_url}`,
+    source: result.source,
+    product: result.product,
+    source_url: result.source_url,
+    retrieved_at: result.retrieved_at ?? null,
+    limitations: result.explanation.limitations,
     warnings: result.quality.warnings,
     coverage,
     valid_observations: validObservations,
