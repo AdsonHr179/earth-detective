@@ -2,6 +2,25 @@
 
 Investigate monthly environmental observations at a selected point, inspect change over time, and reopen or export a saved analysis with its source and method identity.
 
+## Rodar no computador
+
+Instale **Python 3.12** e **Node.js 24.18** (com npm). Na raiz do repositório:
+
+```powershell
+py -3.12 run_local.py
+```
+
+No macOS ou Linux, use `python3.12 run_local.py`. Abra
+[http://127.0.0.1:8000](http://127.0.0.1:8000) quando o servidor terminar de iniciar.
+A primeira execução instala as dependências em `.venv` e compila a interface.
+As próximas servem a interface compilada e a API na mesma porta. Se a porta estiver
+ocupada, acrescente `--port 8001` e abra o endereço que o terminal mostrar.
+Após atualizar o código com Git, rode novamente com `--setup` para recompilar.
+
+O mapa abre em **Street map**, que funciona sem WebGL. O globo é carregado ao
+selecionar **3D globe** e exige aceleração gráfica. O mapa de ruas, a previsão
+atual e as novas análises usam serviços externos e precisam de internet.
+
 ## Delivery status — 15 November 2026
 
 Front A is being prepared on `delivery/adson-20261115`, from agreed base `09b49c31242f2c8c6cb732cb58cf05ff564749d4`. [Delivery tracking](docs/FINALIZACAO.md) distinguishes local tests, real queries, pending backend delivery and official submission. No public deployment or submitted project is claimed here.
@@ -31,27 +50,12 @@ development and deployment origins and restrict the key to Maps JavaScript API.
 [Google Maps setup](https://developers.google.com/maps/documentation/javascript/get-api-key)
 and [3D Maps](https://developers.google.com/maps/documentation/javascript/3d/overview).
 
-## Reproduce locally
+## Develop locally
 
-Tested: Python 3.12.10, Node 24.18.0, npm 11.16.0. System Python 3.14 was not used for the pinned backend dependencies. Use an isolated environment; do not reuse private databases or commit environment files.
-
-```powershell
-python3.12 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r backend/requirements.txt
-cd frontend
-npm ci
-npm test
-npm run lint
-npm run build
-cd ..
-$env:PYTHONPATH = 'backend'
-$env:ANALYSIS_DB_PATH = Join-Path (Get-Location) 'local-analyses.sqlite3'
-.\.venv\Scripts\python.exe -m uvicorn serve:app --host 127.0.0.1 --port 8000 --no-server-header
-```
-
-If `python3.12` is not an installed command, use the absolute path to Python 3.12 or `py -3.12`. On POSIX, activate `.venv/bin/activate`, then run `PYTHONPATH=backend ANALYSIS_DB_PATH=/persistent/path/analyses.sqlite3 uvicorn serve:app --host 127.0.0.1 --port 8000`. `serve.py` requires the frontend build and serves UI/API on one origin. Health: `/health`; API prefix: `/api/v1`.
-
-For frontend development, run the existing backend at `127.0.0.1:8000`, then `npm run dev` in `frontend/`; Vite proxies `/api`. Keep the development server private.
+The local server exposes `/health` and `/api/v1`. It stores analyses in
+`data/earth_detective.sqlite3` by default. Set `ANALYSIS_DB_PATH` to use a different file.
+For frontend development with hot reload, leave the local server running on port 8000
+and run `npm run dev` in `frontend/`. Vite proxies `/api` to that server.
 
 ## Tests and evidence
 

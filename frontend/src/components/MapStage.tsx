@@ -226,7 +226,7 @@ function ViewportBoundsReporter({
   const map = useMap();
   const reportBounds = useCallback(() => onChange(map.getBounds()), [map, onChange]);
 
-  useMapEvents({ moveend: reportBounds, zoomend: reportBounds });
+  useMapEvents({ moveend: reportBounds });
   useEffect(() => reportBounds(), [reportBounds]);
 
   return null;
@@ -269,7 +269,7 @@ function MapAccessibility({ describedBy }: { describedBy: string }) {
 
   useEffect(() => {
     if (typeof ResizeObserver === 'undefined') return undefined;
-    const observer = new ResizeObserver(() => map.invalidateSize());
+    const observer = new ResizeObserver(() => map.invalidateSize({ pan: false, debounceMoveend: true }));
     observer.observe(map.getContainer());
     return () => observer.disconnect();
   }, [map]);
@@ -307,7 +307,7 @@ export default function MapStage({
   }, []);
 
   useEffect(() => {
-    if (!activeRegion?.center) {
+    if (!streetMode || !activeRegion?.center) {
       setRegionBoundaries([]);
       setBoundaryLoading(false);
       setBoundaryError('');
@@ -352,7 +352,7 @@ export default function MapStage({
       });
 
     return () => controller.abort();
-  }, [activeRegion]);
+  }, [activeRegion, streetMode]);
 
   useEffect(
     () => () => {
@@ -404,13 +404,14 @@ export default function MapStage({
   );
 
   const selectedStateBoundary = useMemo(() => {
-    if (!selectedPosition) {
+    if (!streetMode || !selectedPosition) {
       return undefined;
     }
+    const [longitude, latitude] = selectedPosition.coordinates;
     return [...regionBoundaries, ...nationalBoundaries].find((boundary) =>
-      boundaryContainsPoint(boundary, selectedPosition.coordinates),
+      boundary.bounds.contains([latitude, longitude]) && boundaryContainsPoint(boundary, selectedPosition.coordinates),
     );
-  }, [nationalBoundaries, regionBoundaries, selectedPosition]);
+  }, [nationalBoundaries, regionBoundaries, selectedPosition, streetMode]);
 
   const visibleBoundaries = useMemo(
     () =>
@@ -479,7 +480,14 @@ export default function MapStage({
           zoomControl={false}
           attributionControl={false}
         >
-          {!readOnly ? <TileLayer url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" noWrap /> : null}
+          {!readOnly ? (
+            <TileLayer
+              url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+              noWrap
+              updateWhenIdle
+              updateWhenZooming={false}
+            />
+          ) : null}
           <ZoomControl position="bottomright" />
           <MapAccessibility describedBy="map-keyboard-help" />
           <ViewportBoundsReporter onChange={reportViewportBounds} />

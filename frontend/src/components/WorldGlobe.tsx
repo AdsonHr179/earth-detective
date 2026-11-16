@@ -40,7 +40,8 @@ export default function WorldGlobe({ point, resetVersion, onSelectPosition }: Pr
         center: initialPoint.current?.coordinates ?? OVERVIEW_CENTER,
         zoom: fittedZoom,
         maxZoom: 19,
-        pixelRatio: Math.min(window.devicePixelRatio || 1, 2),
+        pixelRatio: Math.min(window.devicePixelRatio || 1, 1.5),
+        canvasContextAttributes: { failIfMajorPerformanceCaveat: true },
         renderWorldCopies: false,
         style: {
           version: 8,
@@ -130,7 +131,7 @@ export default function WorldGlobe({ point, resetVersion, onSelectPosition }: Pr
       <div className="map-surface map-surface--globe" role="group" aria-label="Interactive 3D globe" ref={container} />
       {failed || loading ? (
         <div className="map-view-notice" role="status">
-          {failed ? 'The 3D globe could not load. Select Street map to continue.' : 'Loading 3D globe…'}
+          {failed ? 'The 3D globe could not load on this device. Select Street map to continue.' : 'Loading 3D globe…'}
         </div>
       ) : null}
     </>
