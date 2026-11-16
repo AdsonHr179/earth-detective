@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import L from 'leaflet';
 import {
   CircleMarker,
@@ -14,6 +14,12 @@ import 'leaflet/dist/leaflet.css';
 import type { GeoJSONPoint, RegionRecord } from '../api/client';
 import { readMapTheme } from '../lib/mapTheme';
 import CurrentWeather from './CurrentWeather';
+
+const WorldGlobe = lazy(() => import('./WorldGlobe'));
+const GoogleMap3D = lazy(() => import('./GoogleMap3D'));
+const googleMapsKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim();
+type MapView = 'street' | 'globe' | 'google';
+type StreetCamera = { center: L.LatLngExpression; zoom: number; regionId: string };
 
 export type MapStageProps = {
   regions: RegionRecord[];
@@ -281,6 +287,11 @@ export default function MapStage({
 }: MapStageProps) {
   const theme = useMemo(() => readMapTheme(), []);
   const mapRef = useRef<L.Map | null>(null);
+  const [mapView, setMapView] = useState<MapView>('street');
+  const mapViewControl = useRef<HTMLSelectElement>(null);
+  const [streetCamera, setStreetCamera] = useState<StreetCamera>();
+  const [worldReset, setWorldReset] = useState(0);
+  const streetMode = readOnly || mapView === 'street';
   const activeRegion = regions.find((region) => region.id === selectedRegion);
   const [viewportBounds, setViewportBounds] = useState<L.LatLngBounds | null>(null);
   const [regionBoundaries, setRegionBoundaries] = useState<VisibleBoundary[]>([]);
@@ -434,67 +445,125 @@ export default function MapStage({
               ? `Showing ${visibleBoundaries.length} IBGE boundary mask(s) visible in the map.`
               : 'No selected-region boundaries are visible in the current map view.';
 
+  const nextStreetCamera = streetCamera && streetCamera.regionId !== selectedRegion && activeRegion?.center
+    ? {
+        center: L.latLng(activeRegion.center.latitude, activeRegion.center.longitude),
+        zoom: defaultZoom(),
+      }
+    : streetCamera;
+
+  function changeMapView(next: MapView) {
+    const streetMap = mapRef.current;
+    if (streetMap && mapView === 'street' && next !== 'street') {
+      setStreetCamera({ center: streetMap.getCenter(), zoom: streetMap.getZoom(), regionId: selectedRegion });
+    }
+    setMapView(next);
+  }
+
   return (
     <div className={readOnly ? 'map-root map-root--archive' : 'map-root'}>
-      <MapContainer
-        className="interactive-map"
-        ref={mapRef}
-        bounds={WORLD_BOUNDS}
-        boundsOptions={{ maxZoom: 2 }}
-        minZoom={0}
-        maxBounds={PAN_BOUNDS}
-        maxBoundsViscosity={1}
-        maxZoom={17}
-        scrollWheelZoom
-        keyboard
-        zoomControl={false}
-        attributionControl={false}
-      >
-        {!readOnly ? <TileLayer url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" noWrap /> : null}
-        <ZoomControl position="bottomright" />
-        <MapAccessibility describedBy="map-keyboard-help" />
-        <ViewportBoundsReporter onChange={reportViewportBounds} />
-        {!readOnly ? <MapPositionSelector onSelectPosition={handleMapPositionSelect} /> : null}
-        <SelectedRegionViewport region={activeRegion} point={selectedPosition} readOnly={readOnly} />
-        {displayedBoundaries.map((boundary) => (
-          <GeoJSON
-            key={boundary.stateCode}
-            data={boundary.data}
-            style={
-              boundary.stateCode === selectedStateBoundary?.stateCode
-                ? theme.selectedBoundary
-                : theme.boundary
-            }
-            interactive={false}
-          />
-        ))}
-        {selectedPosition?.type === 'Point' ? (
-          <>
-            <CircleMarker
-              center={[selectedPosition.coordinates[1], selectedPosition.coordinates[0]]}
-              radius={11}
-              pathOptions={theme.pointRing}
-            >
-              <Tooltip>{isDefaultPoint ? 'Region center (default point)' : 'Selected analysis point'}</Tooltip>
-            </CircleMarker>
-            <CircleMarker
-              center={[selectedPosition.coordinates[1], selectedPosition.coordinates[0]]}
-              radius={3.5}
+      {streetMode ? (
+        <MapContainer
+          className="interactive-map"
+          ref={mapRef}
+          center={nextStreetCamera?.center}
+          zoom={nextStreetCamera?.zoom}
+          bounds={WORLD_BOUNDS}
+          boundsOptions={{ maxZoom: 2 }}
+          minZoom={0}
+          maxBounds={PAN_BOUNDS}
+          maxBoundsViscosity={1}
+          maxZoom={19}
+          scrollWheelZoom
+          keyboard
+          zoomControl={false}
+          attributionControl={false}
+        >
+          {!readOnly ? <TileLayer url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" noWrap /> : null}
+          <ZoomControl position="bottomright" />
+          <MapAccessibility describedBy="map-keyboard-help" />
+          <ViewportBoundsReporter onChange={reportViewportBounds} />
+          {!readOnly ? <MapPositionSelector onSelectPosition={handleMapPositionSelect} /> : null}
+          <SelectedRegionViewport region={activeRegion} point={selectedPosition} readOnly={readOnly} />
+          {displayedBoundaries.map((boundary) => (
+            <GeoJSON
+              key={boundary.stateCode}
+              data={boundary.data}
+              style={
+                boundary.stateCode === selectedStateBoundary?.stateCode
+                  ? theme.selectedBoundary
+                  : theme.boundary
+              }
               interactive={false}
-              pathOptions={theme.pointDot}
             />
-          </>
-        ) : null}
-      </MapContainer>
+          ))}
+          {selectedPosition?.type === 'Point' ? (
+            <>
+              <CircleMarker
+                center={[selectedPosition.coordinates[1], selectedPosition.coordinates[0]]}
+                radius={11}
+                pathOptions={theme.pointRing}
+              >
+                <Tooltip>{isDefaultPoint ? 'Region center (default point)' : 'Selected analysis point'}</Tooltip>
+              </CircleMarker>
+              <CircleMarker
+                center={[selectedPosition.coordinates[1], selectedPosition.coordinates[0]]}
+                radius={3.5}
+                interactive={false}
+                pathOptions={theme.pointDot}
+              />
+            </>
+          ) : null}
+        </MapContainer>
+      ) : (
+        <Suspense fallback={<div className="map-placeholder" role="status">Loading map…</div>}>
+          {mapView === 'google' && googleMapsKey ? (
+            <GoogleMap3D
+              apiKey={googleMapsKey} point={selectedPosition}
+              resetVersion={worldReset} onSelectPosition={onSelectPosition}
+            />
+          ) : (
+            <WorldGlobe point={selectedPosition} resetVersion={worldReset} onSelectPosition={onSelectPosition} />
+          )}
+        </Suspense>
+      )}
       {!readOnly ? (
         <>
-          <button
-            type="button"
-            className="map-world-button"
-            onClick={() => { if (mapRef.current) showWorld(mapRef.current); }}
-          >
-            World view
-          </button>
+          <div className="map-view-controls">
+            <select
+              aria-label="Map view"
+              ref={mapViewControl}
+              value={mapView}
+              onChange={(event) => changeMapView(event.target.value as MapView)}
+            >
+              <option value="street">Street map</option>
+              <option value="globe">3D globe</option>
+              <option value="google" disabled={!googleMapsKey}>
+                {googleMapsKey ? 'Google 3D' : 'Google 3D (key required)'}
+              </option>
+            </select>
+            <button
+              type="button"
+              onClick={() => {
+                if (mapRef.current) showWorld(mapRef.current);
+                else setWorldReset((value) => value + 1);
+              }}
+            >
+              World view
+            </button>
+            {!streetMode ? (
+              <button
+                className="map-return-button"
+                type="button"
+                onClick={() => {
+                  changeMapView('street');
+                  mapViewControl.current?.focus({ preventScroll: true });
+                }}
+              >
+                Back to street map
+              </button>
+            ) : null}
+          </div>
           <CurrentWeather point={selectedPosition} />
         </>
       ) : null}
@@ -503,30 +572,32 @@ export default function MapStage({
           ? 'Archived observation point. Use arrow keys to pan the map. Panning does not query environmental data or change this record.'
           : 'Click the map to choose the point. With the keyboard, use the arrow keys to move the map and press Enter to choose the point at the center of the view, or type latitude and longitude in the Point menu.'}
       </p>
-      {boundaryMessage ? (
+      {streetMode && boundaryMessage ? (
         <p className="map-boundary-status" role="status" aria-live="polite">
           {boundaryMessage}
         </p>
       ) : null}
-      <p className="map-attribution">
-        {!readOnly ? (
-          <>
-            &copy;{' '}
-            <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">
-              OpenStreetMap
-            </a>{' '}
-            &middot;{' '}
-          </>
-        ) : null}
-        &copy;{' '}
-        <a href="https://www.ibge.gov.br/" target="_blank" rel="noreferrer noopener">
-          IBGE
-        </a>{' '}
-        &middot;{' '}
-        <a href="https://leafletjs.com/" target="_blank" rel="noreferrer noopener">
-          Leaflet
-        </a>
-      </p>
+      {streetMode ? (
+        <p className="map-attribution">
+          {!readOnly ? (
+            <>
+              &copy;{' '}
+              <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">
+                OpenStreetMap
+              </a>{' '}
+              &middot;{' '}
+            </>
+          ) : null}
+          &copy;{' '}
+          <a href="https://www.ibge.gov.br/" target="_blank" rel="noreferrer noopener">
+            IBGE
+          </a>{' '}
+          &middot;{' '}
+          <a href="https://leafletjs.com/" target="_blank" rel="noreferrer noopener">
+            Leaflet
+          </a>
+        </p>
+      ) : null}
     </div>
   );
 }

@@ -110,7 +110,6 @@
   color: var(--color-accent);
 }
 
-.map-world-button,
 .map-weather {
   position: absolute;
   z-index: 460;
@@ -120,19 +119,69 @@
   border-radius: var(--radius-small);
 }
 
-.map-world-button {
+.map-layer .map-surface {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.map-surface--globe {
+  background: #081222;
+}
+
+.map-surface--google gmp-map-3d {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.map-view-controls {
+  position: absolute;
+  z-index: 460;
+  top: 104px;
   right: 10px;
-  bottom: calc(46px + 2 * var(--target-min));
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: calc(100% - 20px);
+  gap: 4px;
+}
+
+.map-view-controls > * {
   min-height: var(--target-min);
-  padding: 0 10px;
+  padding: 0 8px;
+  color: var(--color-text);
+  background: var(--map-scrim);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-small);
   font: inherit;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 12px;
   cursor: pointer;
 }
 
-.map-world-button:hover {
+.map-view-controls > :hover {
   background: var(--color-raised);
+}
+
+.map-view-controls .map-return-button {
+  border-color: var(--color-accent);
+  font-weight: 600;
+}
+
+.map-view-notice {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  width: min(80%, 320px);
+  padding: 10px 12px;
+  color: var(--color-text);
+  background: var(--map-scrim);
+  border-radius: var(--radius-small);
+  text-align: center;
+  pointer-events: none;
 }
 
 .map-weather {
@@ -205,6 +254,10 @@
 
   .map-attribution {
     font-size: 11px;
+  }
+
+  .map-view-controls {
+    top: 6px;
   }
 
   .map-weather {

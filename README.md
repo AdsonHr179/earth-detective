@@ -17,6 +17,20 @@ The baseline NASA POWER temperature case returned 48 real monthly observations o
 
 The main journey excludes the former projection. The response adapter still preserves saved forecast metadata for compatibility; it is not presented as a validated prediction. Regional labels locate a point; they do not imply spatial averaging.
 
+## Map views
+
+Use **Map view** to switch between **Street map**, **3D globe**, and **Google 3D**.
+Street map and 3D globe use OpenStreetMap. Zoom in for streets and local landmarks.
+The 3D globe requires WebGL. All live map views pass the selected coordinates to NASA POWER.
+
+For Google satellite imagery, enable Maps JavaScript API in a Google Cloud project
+with Maps Platform access. Set `VITE_GOOGLE_MAPS_API_KEY` in `frontend/.env.local`
+for development or in the frontend build environment for deployment, then restart
+Vite or rebuild. The browser receives this key. Apply website restrictions for the
+development and deployment origins and restrict the key to Maps JavaScript API.
+[Google Maps setup](https://developers.google.com/maps/documentation/javascript/get-api-key)
+and [3D Maps](https://developers.google.com/maps/documentation/javascript/3d/overview).
+
 ## Reproduce locally
 
 Tested: Python 3.12.10, Node 24.18.0, npm 11.16.0. System Python 3.14 was not used for the pinned backend dependencies. Use an isolated environment; do not reuse private databases or commit environment files.

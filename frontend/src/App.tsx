@@ -129,7 +129,8 @@ function App() {
       filters.point.coordinates[1] === regionCenter.coordinates[1]));
 
   const needsPoint = activeRegion?.center === null && !point;
-  const runDisabled = catalog.status !== 'ready' || availabilityState === 'loading' || unavailable || !point;
+  const runDisabled =
+    catalog.status !== 'ready' || availabilityState === 'loading' || status === 'loading' || unavailable || !point;
   const handleRun = () => {
     setSheetExpanded(true);
     run();

@@ -154,6 +154,7 @@ describe('App analysis flow', () => {
 
     await user.click(runButton);
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
+    expect(runButton).toBeDisabled();
     gate.release();
 
     expect(await screen.findByRole('heading', { name: TEMPERATURE_TITLE })).toBeInTheDocument();
