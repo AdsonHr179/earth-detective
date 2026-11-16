@@ -63,7 +63,7 @@ class Product:
 PRODUCTS = {
     "nasa_power_temperature": Product(
         "NASA POWER · Air temperature at 2 m", "°C",
-        "Monthly mean temperature derived from MERRA-2 and distributed by NASA POWER.",
+        "Worldwide monthly mean temperature on the NASA POWER MERRA-2 grid (0.5° latitude × 0.625° longitude).",
         "nasa-power-monthly", "https://power.larc.nasa.gov/docs/services/api/temporal/monthly/",
         date(1981, 1, 1), "T2M", max_months=POWER_MAX_MONTHS,
     ),

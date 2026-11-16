@@ -194,6 +194,10 @@ async def handle_unexpected_error(request: Request, exc: Exception) -> JSONRespo
 
 
 def _build_limited_analysis(payload: AnalysisRequest) -> AnalysisResponse:
+    region = get_region(payload.region_id)
+    if region is not None and region["center"] is None and payload.spatial_query is None:
+        raise HTTPException(status_code=422, detail="Choose a point for worldwide analysis.")
+
     product = nasa.PRODUCTS.get(payload.variable_id)
     if product is not None:
         months = nasa_analysis.validate(payload, product)
@@ -252,7 +256,7 @@ def _analysis_cache_key(payload: AnalysisRequest, model: str) -> tuple:
             payload.spatial_query.type,
             *payload.spatial_query.coordinates,
         )
-    elif region is not None:
+    elif region is not None and region["center"] is not None:
         geometry = (
             "Point",
             region["center"]["longitude"],

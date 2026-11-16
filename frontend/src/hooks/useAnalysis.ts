@@ -21,6 +21,9 @@ export type AnalysisFilters = {
   endDate: string;
 };
 
+export const WORLD_REGION_ID = 'world';
+export const PUBLIC_TEMPERATURE_ID = 'nasa_power_temperature';
+
 export const DEFAULT_FILTERS: AnalysisFilters = {
   variableId: 'air_temperature',
   regionId: 'ceara',
@@ -40,7 +43,7 @@ type RetryTarget = { kind: 'new'; filters: AnalysisFilters } | { kind: 'saved'; 
 function effectivePoint(filters: AnalysisFilters, regions: RegionRecord[]): GeoJSONPoint | null {
   if (filters.point) return filters.point;
   const region = regions.find((item) => item.id === filters.regionId);
-  if (!region) return null;
+  if (!region?.center) return null;
   return {
     type: 'Point',
     coordinates: [region.center.longitude, region.center.latitude],
@@ -164,7 +167,13 @@ export function useAnalysis({ regions, availability, defaults = DEFAULT_FILTERS 
   const setPoint = useCallback(
     (point: GeoJSONPoint | null) =>
       updateFilters(
-        (f) => ({ ...f, point }),
+        (f) => ({
+          ...f,
+          point,
+          regionId: point && regionsRef.current.some((region) => region.id === WORLD_REGION_ID)
+            ? WORLD_REGION_ID
+            : f.regionId,
+        }),
         point
           ? `Position selected: ${formatCoordinatePair(point.coordinates[1], point.coordinates[0])}. Run an analysis to query this point.`
           : '',
@@ -217,7 +226,11 @@ export function useAnalysis({ regions, availability, defaults = DEFAULT_FILTERS 
         fail('Select a region from the backend catalog before running an analysis.');
         return;
       }
-      const queryPoint = effectivePoint(next, knownRegions) as GeoJSONPoint;
+      const queryPoint = effectivePoint(next, knownRegions);
+      if (!queryPoint) {
+        fail('Click the map or enter coordinates to choose a point for analysis.');
+        return;
+      }
       const key = requestKey(next, knownRegions);
 
       const controller = new AbortController();

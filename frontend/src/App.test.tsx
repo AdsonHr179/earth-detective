@@ -83,6 +83,41 @@ describe('App first screen', () => {
     expect(requested).not.toHaveBeenCalled();
   });
 
+  it('uses public NASA temperature with a worldwide point selected on the map', async () => {
+    registerCatalogHandlers();
+    const variableId = 'nasa_power_temperature';
+    server.use(
+      http.get('*/api/v1/nasa/variables', () => HttpResponse.json([
+        { ...fixtureVariables[0], id: variableId, name: 'NASA POWER temperature' },
+      ])),
+      http.get('*/api/v1/regions', () => HttpResponse.json([
+        { ...fixtureRegions[0], id: 'world', name: 'Worldwide', center: null, boundaryStateCodes: [] },
+        ...fixtureRegions,
+      ])),
+    );
+    const requested = vi.fn();
+    analysesReturning((body) => {
+      requested(body);
+      return HttpResponse.json(fixtureBackendAnalysis(body));
+    });
+    const user = userEvent.setup();
+    render(<App />);
+
+    await screen.findByRole('heading', { name: 'Choose a point anywhere in the world' });
+    expect(chip(/^Variable:/)).toHaveAccessibleName('Variable: NASA POWER temperature');
+    expect(chip(/^Region:/)).toHaveAccessibleName('Region: Worldwide');
+    const runButton = screen.getByRole('button', { name: 'Run analysis' });
+    expect(runButton).toBeDisabled();
+    await user.click(await screen.findByRole('button', { name: 'Pick map point' }));
+    await waitFor(() => expect(runButton).toBeEnabled());
+    await user.click(runButton);
+
+    expect(await screen.findByRole('heading', { name: 'NASA POWER temperature at the selected point' })).toBeInTheDocument();
+    expect(requested).toHaveBeenCalledWith(expect.objectContaining({
+      variable_id: variableId, region_id: 'world', spatial_query: { type: 'Point', coordinates: [-38.5, -4.5] },
+    }));
+  });
+
   it('shows the catalog failure in words and recovers with Try again', async () => {
     let calls = 0;
     registerCatalogHandlers();

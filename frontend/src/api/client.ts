@@ -21,7 +21,7 @@ export type RegionRecord = {
   center: {
     latitude: number;
     longitude: number;
-  };
+  } | null;
 };
 
 export type SavedAnalysisSummary = {
@@ -372,8 +372,8 @@ export async function fetchRegions(signal?: AbortSignal): Promise<RegionRecord[]
     regions.some(
       (region) =>
         !region ||
-        !Number.isFinite(region.center?.latitude) ||
-        !Number.isFinite(region.center?.longitude) ||
+        (region.center !== null &&
+          (!Number.isFinite(region.center?.latitude) || !Number.isFinite(region.center?.longitude))) ||
         !Array.isArray(region.boundaryStateCodes) ||
         region.boundaryStateCodes.some((code) => !/^\d{2}$/.test(code)),
     )

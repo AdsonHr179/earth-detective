@@ -11,7 +11,9 @@ import LazyMap from './components/LazyMap';
 import ResultPanel from './components/ResultPanel';
 import ResultSheet from './components/ResultSheet';
 import { CatalogLoadingState, ErrorState, LoadingState, ReadyState, UnavailableState } from './components/StateViews';
-import { DEFAULT_FILTERS, useAnalysis, type AnalysisStatus } from './hooks/useAnalysis';
+import {
+  DEFAULT_FILTERS, PUBLIC_TEMPERATURE_ID, WORLD_REGION_ID, useAnalysis, type AnalysisStatus,
+} from './hooks/useAnalysis';
 import { useCatalog } from './hooks/useCatalog';
 import { COMPACT_QUERY, useMediaQuery } from './hooks/useMediaQuery';
 import { formatCoordinatePair, formatPeriodShort } from './lib/format';
@@ -37,12 +39,12 @@ function App() {
   const defaults = useMemo(
     () => ({
       ...DEFAULT_FILTERS,
-      variableId: variables.some((item) => item.id === DEFAULT_FILTERS.variableId)
-        ? DEFAULT_FILTERS.variableId
-        : (variables[0]?.id ?? DEFAULT_FILTERS.variableId),
-      regionId: regions.some((item) => item.id === DEFAULT_FILTERS.regionId)
-        ? DEFAULT_FILTERS.regionId
-        : (regions[0]?.id ?? DEFAULT_FILTERS.regionId),
+      variableId: !variables.length || variables.some((item) => item.id === PUBLIC_TEMPERATURE_ID)
+        ? PUBLIC_TEMPERATURE_ID
+        : (variables.find((item) => item.id === DEFAULT_FILTERS.variableId)?.id ?? variables[0].id),
+      regionId: !regions.length || regions.some((item) => item.id === WORLD_REGION_ID)
+        ? WORLD_REGION_ID
+        : (regions.find((item) => item.id === DEFAULT_FILTERS.regionId)?.id ?? regions[0].id),
     }),
     [variables, regions],
   );
@@ -74,21 +76,27 @@ function App() {
       ...current,
       variableId: variables.some((item) => item.id === current.variableId)
         ? current.variableId
-        : variables[0].id,
+        : defaults.variableId,
       regionId:
         regions.some((item) => item.id === current.regionId) || !regions[0]
           ? current.regionId
-          : regions[0].id,
+          : defaults.regionId,
     }));
-  }, [catalog.status, variables, regions, updateFilters]);
+  }, [catalog.status, variables, regions, defaults, updateFilters]);
+
+  const activeVariable = variables.find((item) => item.id === filters.variableId);
+  const activeRegion = regions.find((item) => item.id === filters.regionId);
+  const availabilityVariableId = activeVariable?.id;
+  const availabilityRegionId = activeRegion?.id;
 
   useEffect(() => {
+    if (!availabilityVariableId || !availabilityRegionId) return;
     const controller = new AbortController();
     setAvailability(null);
     setAvailabilityState('loading');
     setAvailabilityError('');
 
-    fetchAvailability(filters.variableId, filters.regionId, controller.signal)
+    fetchAvailability(availabilityVariableId, availabilityRegionId, controller.signal)
       .then((result) => {
         if (controller.signal.aborted) return;
         setAvailability(result);
@@ -101,10 +109,8 @@ function App() {
       });
 
     return () => controller.abort();
-  }, [filters.variableId, filters.regionId]);
+  }, [availabilityVariableId, availabilityRegionId]);
 
-  const activeVariable = variables.find((item) => item.id === filters.variableId);
-  const activeRegion = regions.find((item) => item.id === filters.regionId);
   const resultVariable = variables.find((item) => item.id === analysis?.variable_id);
   const resultRegion = regions.find((item) => item.id === analysis?.region_id);
 
@@ -114,17 +120,16 @@ function App() {
       : null;
   const unavailable = selectedAvailability?.available === false;
 
-  const regionCenter: GeoJSONPoint | null = activeRegion
+  const regionCenter: GeoJSONPoint | null = activeRegion?.center
     ? { type: 'Point', coordinates: [activeRegion.center.longitude, activeRegion.center.latitude] }
     : null;
   const point = filters.point ?? regionCenter;
-  const pointIsRegionCenter =
-    !filters.point ||
-    (regionCenter !== null &&
-      filters.point.coordinates[0] === regionCenter.coordinates[0] &&
-      filters.point.coordinates[1] === regionCenter.coordinates[1]);
+  const pointIsRegionCenter = regionCenter !== null &&
+    (!filters.point || (filters.point.coordinates[0] === regionCenter.coordinates[0] &&
+      filters.point.coordinates[1] === regionCenter.coordinates[1]));
 
-  const runDisabled = catalog.status !== 'ready' || availabilityState === 'loading' || unavailable;
+  const needsPoint = activeRegion?.center === null && !point;
+  const runDisabled = catalog.status !== 'ready' || availabilityState === 'loading' || unavailable || !point;
   const handleRun = () => {
     setSheetExpanded(true);
     run();
@@ -164,14 +169,14 @@ function App() {
         kind={resultKind}
         stale={status === 'stale'}
         variableName={resultVariable?.name ?? analysis.variable_id}
-        regionName={resultRegion?.name}
+        regionName={resultRegion?.center ? resultRegion.name : undefined}
         circular={resultVariable?.circular ?? false}
         onExport={() => exportAnalysisCsv(analysis)}
       />
     );
   } else {
     resultView = (
-      <ReadyState selection={selectionText}>
+      <ReadyState selection={selectionText} needsPoint={needsPoint}>
         {message ? (
           <p className="ready-note" role="status">
             {message}
@@ -278,7 +283,7 @@ function App() {
           ) : catalog.status === 'ready' && selectedAvailability?.warning ? (
             <p className="ready-note">{selectedAvailability.warning}</p>
           ) : null}
-          {catalog.status === 'ready' && availabilityState === 'error' ? (
+          {catalog.status === 'ready' && availabilityState === 'error' && !needsPoint ? (
             <p className="ready-note" role="status">
               Coverage could not be checked: {availabilityError} You can still attempt the analysis.
             </p>

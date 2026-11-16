@@ -29,7 +29,11 @@ The API uses `/api/v1`. Health is available at `/health` and `/api/v1/health`.
 
 Both dates are inclusive ISO calendar dates. `spatial_query` is optional and defaults to
 the catalog center. Point coordinates are WGS 84 `[longitude, latitude]`. Region IDs provide
-map context for a grid cell or model point. `dataset_version` can be omitted to select
+map context for a grid cell or model point. Use `region_id: "world"` with explicit
+`spatial_query` for coordinates anywhere in the world. `GET /regions` advertises this
+mode with `center: null` and an empty list of IBGE boundaries. Omitting its point returns
+`422`. The public POWER temperature product uses the MERRA-2 grid at 0.5° latitude
+× 0.625° longitude. `dataset_version` can be omitted to select
 the provider's configured version. POWER accepts up to 360 complete months, excludes
 partial edge months and uses the last complete calendar year as its catalog upper bound.
 Authenticated NASA archives retain the 120-month limit.

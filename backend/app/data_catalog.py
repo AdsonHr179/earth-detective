@@ -155,6 +155,15 @@ VARIABLES = [
 
 REGIONS = [
     {
+        "id": "world",
+        "name": "Worldwide",
+        "country": "",
+        "geometryName": "world",
+        "geometryRef": "",
+        "boundaryStateCodes": [],
+        "center": None,
+    },
+    {
         "id": "ceara",
         "name": "Ceará",
         "country": "Brazil",

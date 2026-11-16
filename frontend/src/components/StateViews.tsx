@@ -3,15 +3,20 @@ import { describeFailure } from '../lib/errors';
 import StateNotice from './StateNotice';
 
 /** What the result column shows before any analysis was run: an honest 'ready', never an example number. */
-export function ReadyState({ selection, children }: { selection: string; children?: ReactNode }) {
+export function ReadyState({
+  selection, needsPoint = false, children,
+}: { selection: string; needsPoint?: boolean; children?: ReactNode }) {
   return (
     <div className="ready-state">
       <p className="result-kicker">Ready</p>
-      <h2 className="ready-title">Run analysis to read the trend at this point</h2>
+      <h2 className="ready-title">
+        {needsPoint ? 'Choose a point anywhere in the world' : 'Run analysis to read the trend at this point'}
+      </h2>
       <p className="ready-selection">{selection}</p>
       <p className="ready-help">
-        Nothing is estimated until you run it. The result shows one rate of change per decade, how far it can be
-        trusted, and where the numbers come from.
+        {needsPoint
+          ? 'Click the map or enter coordinates in Point. Then select Run analysis.'
+          : 'The result shows the rate of change per decade for the selected grid cell, along with coverage and sources.'}
       </p>
       {children}
     </div>
