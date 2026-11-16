@@ -11,7 +11,8 @@ client = TestClient(app)
 
 
 @pytest.fixture(autouse=True)
-def clear_analysis_cache():
+def clear_analysis_cache(monkeypatch):
+    monkeypatch.setenv("ENABLE_UNVERIFIED_PROVIDERS", "1")
     main.clear_analysis_cache()
     yield
     main.clear_analysis_cache()
@@ -62,7 +63,7 @@ def test_health_endpoint():
     response = client.get('/health')
     assert response.status_code == 200
     assert response.json()['status'] == 'ok'
-    assert response.json()['data_source'] == 'meteomatics'
+    assert response.json()['data_source'] == 'nasa-power'
 
 
 def test_variables_endpoint():
@@ -236,3 +237,46 @@ def test_csv_export_escapes_formula_like_text(monkeypatch):
     assert "'=1+1" in response.text
     assert "'+SUM(1,1)" in response.text
     assert "'@SUM(1,1)" in response.text
+
+
+def test_experimental_meteomatics_availability_requires_opt_in(monkeypatch):
+    monkeypatch.delenv("ENABLE_UNVERIFIED_PROVIDERS", raising=False)
+    monkeypatch.setenv("METEOMATICS_USERNAME", "test-user")
+    monkeypatch.setenv("METEOMATICS_PASSWORD", "test-password")
+    response = client.get("/api/v1/availability?variable_id=air_temperature&region_id=ceara")
+    assert response.status_code == 200
+    assert response.json()["available"] is False
+    assert "disabled" in response.json()["warning"]
+
+
+def test_legacy_record_reopens_without_assigning_new_inference_state():
+    from app.services import analysis_store
+
+    original = _sample_analysis().model_dump(mode="json")
+    analysis_store.save(_sample_analysis())
+    main.clear_analysis_cache()
+
+    response = client.get("/api/v1/analyses/test-analysis")
+    assert response.status_code == 200
+    assert response.json() == original
+    assert response.json()["trend"]["p_value"] == 1.0
+    assert "inference_status" not in response.json()["trend"]
+    assert "inference_reason" not in response.json()["trend"]
+
+
+@pytest.mark.parametrize("start_date", [1577836800, "20200101", "2020-01-01T00:00:00"])
+def test_analysis_requires_iso_calendar_dates(start_date):
+    response = client.post("/api/v1/analyses", json={
+        "variable_id": "nasa_power_temperature", "region_id": "ceara",
+        "start_date": start_date, "end_date": "2020-12-31",
+    })
+    assert response.status_code == 422
+    assert "ISO YYYY-MM-DD" in response.json()["detail"]
+
+
+
+def test_streamed_request_uses_the_same_body_limit():
+    body = iter([b"x" * (main.MAX_REQUEST_BODY_BYTES // 2)] * 3)
+    response = client.post("/api/v1/analyses", content=body, headers={"content-type": "application/json"})
+    assert response.status_code == 413
+    assert response.json()["error"]["code"] == "request_too_large"

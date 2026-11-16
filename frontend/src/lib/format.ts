@@ -2,7 +2,8 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 export const MINUS = '−';
 
 /** Parses 'YYYY-MM-DD' (or a longer ISO string) as UTC midnight. NaN when it cannot be read. */
-export function parseDate(date: string): number {
+export function parseDate(date: string | null): number {
+  if (date === null) return Number.NaN;
   const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(date);
   if (!match) return Number.NaN;
   return Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
@@ -43,7 +44,7 @@ export function formatPValue(p: number): string {
 }
 
 /** Whole calendar months covered by two ISO dates, inclusive of both months. */
-export function monthsBetween(startDate: string, endDate: string): number {
+export function monthsBetween(startDate: string | null, endDate: string | null): number {
   const start = parseDate(startDate);
   const end = parseDate(endDate);
   if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) return 0;
@@ -52,7 +53,7 @@ export function monthsBetween(startDate: string, endDate: string): number {
   return (e.getUTCFullYear() - s.getUTCFullYear()) * 12 + (e.getUTCMonth() - s.getUTCMonth()) + 1;
 }
 
-export function periodYears(startDate: string, endDate: string): number {
+export function periodYears(startDate: string | null, endDate: string | null): number {
   return monthsBetween(startDate, endDate) / 12;
 }
 

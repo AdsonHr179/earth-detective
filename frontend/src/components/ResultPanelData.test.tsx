@@ -47,9 +47,9 @@ describe('ResultPanel descriptive statistics', () => {
     expect(screen.queryByText('Descriptive statistics')).not.toBeInTheDocument();
   });
 
-  it('shows the projection in the chart only when the backend sent one', () => {
+  it('keeps projection out of the main journey even when saved in the response', () => {
     renderPanel({ forecast: fixtureForecast });
-    expect(screen.getByText('Exploratory projection (not an official forecast)')).toBeInTheDocument();
+    expect(screen.queryByText('Exploratory projection (not an official forecast)')).not.toBeInTheDocument();
   });
 });
 

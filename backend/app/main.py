@@ -12,6 +12,7 @@ from datetime import date
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -24,13 +25,26 @@ from app.config import (
     DATA_SOURCE,
     MAX_CONCURRENT_ANALYSES,
     MAX_REQUEST_BODY_BYTES,
+    UNVERIFIED_PROVIDER_WARNING,
+    allowed_origins,
+    unverified_providers_enabled,
 )
 from app.data_catalog import VARIABLES, REGIONS, get_region, get_variable
-from app.schemas import AnalysisRequest, AnalysisResponse, AvailabilityResponse, GeoJSONPoint, RegionCatalogItem, SeriesPoint, VariableCatalogItem
+from app.schemas import (
+    AnalysisRequest,
+    AnalysisResponse,
+    AvailabilityResponse,
+    GeoJSONPoint,
+    NasaAnalysisResponse,
+    RegionCatalogItem,
+    SavedAnalysisSummary,
+    SeriesPoint,
+    VariableCatalogItem,
+)
 from app.services import analysis_store, nasa, nasa_analysis
-from app.schemas import NasaAnalysisResponse, SavedAnalysisSummary
 from app.services.meteomatics import (
     DATASET_VERSION as METEOMATICS_DATASET_VERSION,
+    MAX_PERIOD_DAYS as METEOMATICS_MAX_PERIOD_DAYS,
     METHOD_VERSION as METEOMATICS_METHOD_VERSION,
     SOURCE_URL as METEOMATICS_SOURCE_URL,
     MeteomaticsConfigurationError,
@@ -45,13 +59,16 @@ from app.services.meteomatics import (
 )
 from app.science.trend import (
     ALPHA,
-    CONFIDENCE_MULTIPLIER,
     DAYS_PER_YEAR,
     DIRECTION_EPSILON,
     ESTIMATOR,
     INFERENCE_METHOD,
     MINIMUM_VALID_POINTS,
+    TrendInputError,
     analyze_time_series,
+    explain_trend,
+    observed_period,
+    unavailable_trend,
 )
 
 app = FastAPI(title=APP_NAME, version=APP_VERSION)
@@ -59,10 +76,6 @@ logger = logging.getLogger(__name__)
 _ANALYSIS_SEMAPHORE = threading.BoundedSemaphore(MAX_CONCURRENT_ANALYSES)
 _ANALYSIS_CACHE: OrderedDict[tuple, tuple[float, AnalysisResponse]] = OrderedDict()
 _ANALYSIS_CACHE_LOCK = threading.Lock()
-
-
-class RequestTooLargeError(Exception):
-    pass
 
 
 class RequestSizeLimitMiddleware:
@@ -106,7 +119,7 @@ class RequestSizeLimitMiddleware:
             if message["type"] == "http.request":
                 received_bytes += len(message.get("body", b""))
                 if received_bytes > self.max_body_bytes:
-                    raise RequestTooLargeError()
+                    raise HTTPException(status_code=413, detail="Request body exceeds the allowed size")
             return message
 
         await self.app(scope, limited_receive, send)
@@ -116,6 +129,15 @@ app.add_middleware(
     RequestSizeLimitMiddleware,
     max_body_bytes=MAX_REQUEST_BODY_BYTES,
 )
+origins = allowed_origins()
+if origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_methods=["GET", "POST"],
+        allow_headers=["Content-Type"],
+        expose_headers=["Content-Disposition", "Retry-After"],
+    )
 
 
 def _error_response(status_code: int, code: str, message: str, headers=None) -> JSONResponse:
@@ -155,17 +177,6 @@ async def handle_validation_error(
     return _error_response(422, "invalid_request", detail)
 
 
-@app.exception_handler(RequestTooLargeError)
-async def handle_oversized_request(
-    _request: Request, _exc: RequestTooLargeError
-) -> JSONResponse:
-    return _error_response(
-        413,
-        "request_too_large",
-        "Request body exceeds the allowed size",
-    )
-
-
 @app.exception_handler(sqlite3.Error)
 async def handle_database_error(_request: Request, _exc: sqlite3.Error) -> JSONResponse:
     return _error_response(503, "analysis_storage_unavailable", "The analysis database is unavailable.")
@@ -183,6 +194,10 @@ async def handle_unexpected_error(request: Request, exc: Exception) -> JSONRespo
 
 
 def _build_limited_analysis(payload: AnalysisRequest) -> AnalysisResponse:
+    region = get_region(payload.region_id)
+    if region is not None and region["center"] is None and payload.spatial_query is None:
+        raise HTTPException(status_code=422, detail="Choose a point for worldwide analysis.")
+
     product = nasa.PRODUCTS.get(payload.variable_id)
     if product is not None:
         months = nasa_analysis.validate(payload, product)
@@ -196,6 +211,8 @@ def _build_limited_analysis(payload: AnalysisRequest) -> AnalysisResponse:
             model = validate_provider_configuration()
         except MeteomaticsConfigurationError as exc:
             raise HTTPException(status_code=503, detail=str(exc)) from exc
+        if not unverified_providers_enabled():
+            raise HTTPException(status_code=503, detail=UNVERIFIED_PROVIDER_WARNING)
 
     cache_key = _analysis_cache_key(payload, model)
     now = time.monotonic()
@@ -239,7 +256,7 @@ def _analysis_cache_key(payload: AnalysisRequest, model: str) -> tuple:
             payload.spatial_query.type,
             *payload.spatial_query.coordinates,
         )
-    elif region is not None:
+    elif region is not None and region["center"] is not None:
         geometry = (
             "Point",
             region["center"]["longitude"],
@@ -248,13 +265,13 @@ def _analysis_cache_key(payload: AnalysisRequest, model: str) -> tuple:
     else:
         geometry = None
 
+    product = nasa.PRODUCTS.get(payload.variable_id)
     statistical_parameters = (
         ALPHA,
         MINIMUM_VALID_POINTS,
         ESTIMATOR,
         INFERENCE_METHOD,
         DIRECTION_EPSILON,
-        CONFIDENCE_MULTIPLIER,
         DAYS_PER_YEAR,
     )
     return (
@@ -262,8 +279,8 @@ def _analysis_cache_key(payload: AnalysisRequest, model: str) -> tuple:
         payload.region_id,
         payload.start_date.isoformat(),
         payload.end_date.isoformat(),
-        payload.dataset_version or METEOMATICS_DATASET_VERSION,
-        METEOMATICS_METHOD_VERSION,
+        payload.dataset_version or (product.version if product else METEOMATICS_DATASET_VERSION),
+        nasa_analysis.METHOD_VERSION if product else METEOMATICS_METHOD_VERSION,
         model,
         geometry,
         statistical_parameters,
@@ -313,7 +330,7 @@ def _build_analysis_payload(
             detail="Meteomatics data could not be retrieved or parsed",
         ) from exc
 
-    series = data["series"]
+    analysis_series = [SeriesPoint.model_validate(point) for point in data["series"]]
     spatial_query = {
         "type": "Point",
         "coordinates": [data["longitude"], data["latitude"]],
@@ -329,6 +346,7 @@ def _build_analysis_payload(
         "coverage_fraction": round(data["coverage_fraction"], 6),
         "hourly_coverage_fraction": round(data["hourly_coverage_fraction"], 6),
         "warnings": data["warnings"],
+        "aggregation": parameter_spec(variable_id).aggregation,
     }
     limitations = (
         "Values are hourly model output aggregated to complete calendar months at the selected "
@@ -337,56 +355,29 @@ def _build_analysis_payload(
         "Meteomatics product."
     )
 
-    if data.get("supports_trend", True):
-        trend = analyze_time_series(series)
-        trend_applicable = True
-        summary = (
-            f"The {variable['name']} point time series associated with {region['name']} "
-            f"shows a {trend['direction']} trend over the selected period."
-        )
+    if parameter_spec(variable_id).supports_trend:
+        try:
+            trend = analyze_time_series(data["series"], variable["unit"])
+        except TrendInputError as exc:
+            raise HTTPException(status_code=502, detail="Meteomatics returned an invalid time series.") from exc
     else:
-        trend = {
-            "direction": "undetermined",
-            "slope_per_decade": None,
-            "slope_unit": variable["unit"],
-            "confidence_interval": None,
-            "p_value": None,
-            "alpha": ALPHA,
-            "significant": None,
-            "estimator": "not_applicable",
-            "inference_method": "circular_data",
-        }
-        trend_applicable = False
-        summary = (
-            f"The {variable['name']} point time series is charted as a circular monthly mean. "
-            "A linear trend is not calculated for wind direction."
+        trend = unavailable_trend(
+            variable["unit"], "unsupported", "A linear fit is unavailable for circular wind direction.",
         )
-    analysis_id = str(uuid.uuid4())
-    analysis_series = [
-        SeriesPoint(
-            timestamp=point["timestamp"],
-            value=point["value"],
-            unit=point["unit"],
-            quality_flags=point["quality_flags"],
-            coverage_fraction=point.get("coverage_fraction"),
-        )
-        for point in series
-    ]
 
     explanation = {
-        "summary": summary,
+        "summary": f"{variable['name']} at the selected point near {region['name']}. {explain_trend(trend)}",
         "limitations": limitations,
     }
-
     payload = {
-        "analysis_id": analysis_id,
+        "analysis_id": str(uuid.uuid4()),
         "schema_version": "1.0",
         "dataset_version": effective_version,
         "method_version": METEOMATICS_METHOD_VERSION,
         "variable_id": variable_id,
         "region_id": region_id,
         "requested_period": {"start_date": start_date.isoformat(), "end_date": end_date.isoformat()},
-        "effective_period": {"start_date": start_date.isoformat(), "end_date": end_date.isoformat()},
+        "effective_period": observed_period(analysis_series),
         "source": source,
         "product": product,
         "source_url": source_url,
@@ -395,11 +386,7 @@ def _build_analysis_payload(
         "spatial_query": spatial_query,
         "series": [point.model_dump() for point in analysis_series],
         "analysis_series": [point.model_dump() for point in analysis_series],
-        "trend": {
-            **trend,
-            "slope_unit": variable["unit"],
-            "applicable": trend_applicable,
-        },
+        "trend": trend,
         "quality": quality,
         "explanation": explanation,
     }
@@ -422,6 +409,8 @@ def _validate_analysis_request(
     if start_date > end_date:
         raise HTTPException(status_code=422, detail="start_date must be before or equal to end_date")
 
+    if (end_date - start_date).days + 1 > METEOMATICS_MAX_PERIOD_DAYS:
+        raise HTTPException(status_code=422, detail="Meteomatics analysis periods cannot exceed ten years.")
     if not supported_variable(variable_id):
         raise HTTPException(
             status_code=422,
@@ -498,11 +487,19 @@ def availability(
     if region is None:
         raise HTTPException(status_code=404, detail="Unknown region")
 
-    try:
-        configured_model()
-    except MeteomaticsConfigurationError as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
     supported = supported_variable(variable_id)
+    warning = "No validated Meteomatics parameter is configured for this variable."
+    if supported:
+        try:
+            validate_provider_configuration()
+        except MeteomaticsConfigurationError as exc:
+            supported, warning = False, str(exc)
+        else:
+            supported = unverified_providers_enabled()
+            warning = (
+                "Experimental configuration only. A successful query is required to confirm provider access and coverage."
+                if supported else UNVERIFIED_PROVIDER_WARNING
+            )
     return AvailabilityResponse(
         variable_id=variable_id,
         region_id=region_id,
@@ -510,11 +507,7 @@ def availability(
         available=supported,
         start_date=None,
         end_date=None,
-        warning=(
-            "Parameter is configured, but account access and date coverage are confirmed only when an analysis request succeeds."
-            if supported
-            else "No validated Meteomatics parameter is configured for this variable."
-        ),
+        warning=warning,
     )
 
 
@@ -563,7 +556,30 @@ def _analysis_csv(analysis: AnalysisResponse) -> StreamingResponse:
         "trend_applicable",
         "direction",
         "slope_per_decade",
+        "slope_unit",
+        "inference_status",
+        "inference_reason",
+        "analysis_id",
+        "dataset_version",
+        "method_version",
+        "source",
+        "product",
+        "retrieved_at",
     ])
+    metadata = [
+        _safe_csv_text(value or "")
+        for value in (
+            analysis.trend.slope_unit,
+            analysis.trend.inference_status,
+            analysis.trend.inference_reason,
+            analysis.analysis_id,
+            analysis.dataset_version,
+            analysis.method_version,
+            analysis.source,
+            analysis.product,
+            analysis.retrieved_at,
+        )
+    ]
     for point in analysis.series:
         writer.writerow([
             _safe_csv_text(point.timestamp),
@@ -574,6 +590,7 @@ def _analysis_csv(analysis: AnalysisResponse) -> StreamingResponse:
             analysis.trend.applicable,
             analysis.trend.direction,
             analysis.trend.slope_per_decade,
+            *metadata,
         ])
     response = StreamingResponse(iter([output.getvalue()]), media_type="text/csv")
     response.headers["Content-Disposition"] = "attachment; filename=earth_detective_analysis.csv"

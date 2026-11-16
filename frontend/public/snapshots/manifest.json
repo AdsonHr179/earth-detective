@@ -1,0 +1,36 @@
+{
+  "kind": "archived-nasa-observations",
+  "packaged_at": "2026-11-15T20:48:13.057093+00:00",
+  "backend_integration_sha": "50b35a7de53a7ad9b0b94822edcfcfe7f0dbdaaa",
+  "backend_delivery_sha": "0d864a4389044ef354101baa6810512d17e1e950",
+  "analysis_id": "31c0e2ce-6ab8-45f9-94b0-134ce988b0c4",
+  "analysis_path": "/snapshots/nasa-power-ceara-2020-2023.json",
+  "csv_path": "/snapshots/nasa-power-ceara-2020-2023.csv",
+  "artifact_sha256": "a3d92198f3a4d88b50e3a605a65e085ac3fc4b27bd20959ce8cf8c5dd67838c6",
+  "csv_sha256": "7899aaf45900c5206622c6bf3b669095dab88a5f0a0a83e2234316d7b8d16be4",
+  "region": {
+    "id": "ceara",
+    "name": "Ceará",
+    "country": "Brazil",
+    "geometryName": "ceara_outline",
+    "geometryRef": "https://servicodados.ibge.gov.br/api/v3/malhas/estados",
+    "boundaryStateCodes": [
+      "23"
+    ],
+    "center": {
+      "latitude": -5.2,
+      "longitude": -39.5
+    }
+  },
+  "variable": {
+    "id": "nasa_power_temperature",
+    "name": "NASA POWER · Air temperature at 2 m",
+    "unit": "°C",
+    "description": "Monthly mean temperature derived from MERRA-2 and distributed by NASA POWER.",
+    "source": "NASA POWER / MERRA-2",
+    "group": "NASA Earth data",
+    "trend_supported": true,
+    "circular": false
+  },
+  "notice": "Archived real NASA observations. Fixed inputs; no live environmental queries."
+}

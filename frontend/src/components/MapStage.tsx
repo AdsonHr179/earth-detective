@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import L from 'leaflet';
 import {
   CircleMarker,
   GeoJSON,
   MapContainer,
+  TileLayer,
   Tooltip,
   useMap,
   useMapEvents,
@@ -12,6 +13,13 @@ import {
 import 'leaflet/dist/leaflet.css';
 import type { GeoJSONPoint, RegionRecord } from '../api/client';
 import { readMapTheme } from '../lib/mapTheme';
+import CurrentWeather from './CurrentWeather';
+
+const WorldGlobe = lazy(() => import('./WorldGlobe'));
+const GoogleMap3D = lazy(() => import('./GoogleMap3D'));
+const googleMapsKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim();
+type MapView = 'street' | 'globe' | 'google';
+type StreetCamera = { center: L.LatLngExpression; zoom: number; regionId: string };
 
 export type MapStageProps = {
   regions: RegionRecord[];
@@ -21,6 +29,8 @@ export type MapStageProps = {
   /** True when `selectedPosition` is the default region center rather than a choice. */
   isDefaultPoint?: boolean;
   onSelectPosition: (position: GeoJSONPoint) => void;
+  /** Archived records allow panning, but their query point cannot be changed. */
+  readOnly?: boolean;
 };
 
 type VisibleBoundary = {
@@ -172,18 +182,38 @@ function defaultZoom(): number {
     : 6;
 }
 
-function SelectedRegionViewport({ region, zoom }: { region?: RegionRecord; zoom: number }) {
+const WORLD_BOUNDS: L.LatLngBoundsExpression = [[-60, -180], [80, 180]];
+const PAN_BOUNDS: L.LatLngBoundsExpression = [[-85.05, -180], [85.05, 180]];
+
+function showWorld(map: L.Map) {
+  map.fitBounds(WORLD_BOUNDS, { maxZoom: 2, animate: false });
+}
+
+function SelectedRegionViewport({ region, point, readOnly }: {
+  region?: RegionRecord;
+  point?: GeoJSONPoint | null;
+  readOnly: boolean;
+}) {
   const map = useMap();
+  const previousRegion = useRef<string>();
+  const longitude = point?.coordinates[0];
+  const latitude = point?.coordinates[1];
 
   useEffect(() => {
-    if (region) {
-      map.flyTo(
-        [region.center.latitude, region.center.longitude],
-        Math.max(map.getZoom(), zoom),
-        { duration: 0.45 },
-      );
+    if (!region) return;
+    const previous = previousRegion.current;
+    previousRegion.current = region.id;
+    const changedRegion = previous !== undefined && previous !== region.id;
+    if (region.center && (changedRegion || (readOnly && previous === undefined))) {
+      map.setView([region.center.latitude, region.center.longitude], defaultZoom());
+    } else if (!region.center) {
+      if (latitude === undefined || longitude === undefined) {
+        if (changedRegion) showWorld(map);
+      } else if (!map.getBounds().contains([latitude, longitude])) {
+        map.panTo([latitude, longitude]);
+      }
     }
-  }, [map, region, zoom]);
+  }, [map, region, latitude, longitude, readOnly]);
 
   return null;
 }
@@ -210,16 +240,15 @@ function MapPositionSelector({
   const map = useMap();
 
   useMapEvents({
-    click: ({ latlng }) =>
-      onSelectPosition({
-        type: 'Point',
-        coordinates: [latlng.lng, latlng.lat],
-      }),
+    click: ({ latlng }) => {
+      if (latlng.lng < -180 || latlng.lng > 180) return;
+      onSelectPosition({ type: 'Point', coordinates: [latlng.lng, latlng.lat] });
+    },
     // Keyboard: arrow keys pan the map; Enter chooses the point at the center of the view.
     keydown: ({ originalEvent }) => {
       if (originalEvent.key !== 'Enter') return;
       originalEvent.preventDefault();
-      const center = map.getCenter();
+      const center = map.wrapLatLng(map.getCenter());
       onSelectPosition({ type: 'Point', coordinates: [center.lng, center.lat] });
     },
   });
@@ -234,7 +263,7 @@ function MapAccessibility({ describedBy }: { describedBy: string }) {
   useEffect(() => {
     const container = map.getContainer();
     container.setAttribute('role', 'group');
-    container.setAttribute('aria-label', 'Map of the selected region');
+    container.setAttribute('aria-label', 'World map');
     container.setAttribute('aria-describedby', describedBy);
   }, [map, describedBy]);
 
@@ -254,13 +283,15 @@ export default function MapStage({
   selectedPosition,
   isDefaultPoint = false,
   onSelectPosition,
+  readOnly = false,
 }: MapStageProps) {
   const theme = useMemo(() => readMapTheme(), []);
-  const zoom = useMemo(() => defaultZoom(), []);
-  const initialRegion = regions.find((region) => region.id === selectedRegion) ?? regions[0];
-  const initialCenter: [number, number] = initialRegion
-    ? [initialRegion.center.latitude, initialRegion.center.longitude]
-    : [-7, -39];
+  const mapRef = useRef<L.Map | null>(null);
+  const [mapView, setMapView] = useState<MapView>('street');
+  const mapViewControl = useRef<HTMLSelectElement>(null);
+  const [streetCamera, setStreetCamera] = useState<StreetCamera>();
+  const [worldReset, setWorldReset] = useState(0);
+  const streetMode = readOnly || mapView === 'street';
   const activeRegion = regions.find((region) => region.id === selectedRegion);
   const [viewportBounds, setViewportBounds] = useState<L.LatLngBounds | null>(null);
   const [regionBoundaries, setRegionBoundaries] = useState<VisibleBoundary[]>([]);
@@ -276,8 +307,10 @@ export default function MapStage({
   }, []);
 
   useEffect(() => {
-    if (!activeRegion) {
+    if (!activeRegion?.center) {
       setRegionBoundaries([]);
+      setBoundaryLoading(false);
+      setBoundaryError('');
       return;
     }
 
@@ -331,7 +364,10 @@ export default function MapStage({
   const handleMapPositionSelect = useCallback(
     (position: GeoJSONPoint) => {
       onSelectPosition(position);
+      const [longitude, latitude] = position.coordinates;
       if (
+        !activeRegion?.center ||
+        longitude < -74 || longitude > -28 || latitude < -34 || latitude > 6 ||
         regionBoundaries.some((boundary) =>
           boundaryContainsPoint(boundary, position.coordinates),
         ) ||
@@ -364,7 +400,7 @@ export default function MapStage({
           }
         });
     },
-    [onSelectPosition, regionBoundaries],
+    [activeRegion, onSelectPosition, regionBoundaries],
   );
 
   const selectedStateBoundary = useMemo(() => {
@@ -393,7 +429,7 @@ export default function MapStage({
     }
     return [...visibleBoundaries, selectedStateBoundary];
   }, [selectedStateBoundary, viewportBounds, visibleBoundaries]);
-  const boundaryMessage = nationalBoundaryLoading
+  const boundaryMessage = !activeRegion?.center ? '' : nationalBoundaryLoading
     ? 'Finding the official IBGE boundary for the selected point...'
     : nationalBoundaryError
       ? `Could not find the selected state's IBGE boundary: ${nationalBoundaryError}`
@@ -409,72 +445,159 @@ export default function MapStage({
               ? `Showing ${visibleBoundaries.length} IBGE boundary mask(s) visible in the map.`
               : 'No selected-region boundaries are visible in the current map view.';
 
+  const nextStreetCamera = streetCamera && streetCamera.regionId !== selectedRegion && activeRegion?.center
+    ? {
+        center: L.latLng(activeRegion.center.latitude, activeRegion.center.longitude),
+        zoom: defaultZoom(),
+      }
+    : streetCamera;
+
+  function changeMapView(next: MapView) {
+    const streetMap = mapRef.current;
+    if (streetMap && mapView === 'street' && next !== 'street') {
+      setStreetCamera({ center: streetMap.getCenter(), zoom: streetMap.getZoom(), regionId: selectedRegion });
+    }
+    setMapView(next);
+  }
+
   return (
-    <div className="map-root">
-      <MapContainer
-        className="interactive-map"
-        center={initialCenter}
-        zoom={zoom}
-        minZoom={3}
-        maxZoom={17}
-        scrollWheelZoom
-        keyboard
-        zoomControl={false}
-        attributionControl={false}
-      >
-        {/* No third-party tiles: the background is a flat dark colour (CSS); only IBGE boundaries are drawn. */}
-        <ZoomControl position="bottomright" />
-        <MapAccessibility describedBy="map-keyboard-help" />
-        <ViewportBoundsReporter onChange={reportViewportBounds} />
-        <MapPositionSelector onSelectPosition={handleMapPositionSelect} />
-        <SelectedRegionViewport region={activeRegion} zoom={zoom} />
-        {displayedBoundaries.map((boundary) => (
-          <GeoJSON
-            key={boundary.stateCode}
-            data={boundary.data}
-            style={
-              boundary.stateCode === selectedStateBoundary?.stateCode
-                ? theme.selectedBoundary
-                : theme.boundary
-            }
-            interactive={false}
-          />
-        ))}
-        {selectedPosition?.type === 'Point' ? (
-          <>
-            <CircleMarker
-              center={[selectedPosition.coordinates[1], selectedPosition.coordinates[0]]}
-              radius={11}
-              pathOptions={theme.pointRing}
-            >
-              <Tooltip>{isDefaultPoint ? 'Region center (default point)' : 'Selected analysis point'}</Tooltip>
-            </CircleMarker>
-            <CircleMarker
-              center={[selectedPosition.coordinates[1], selectedPosition.coordinates[0]]}
-              radius={3.5}
+    <div className={readOnly ? 'map-root map-root--archive' : 'map-root'}>
+      {streetMode ? (
+        <MapContainer
+          className="interactive-map"
+          ref={mapRef}
+          center={nextStreetCamera?.center}
+          zoom={nextStreetCamera?.zoom}
+          bounds={WORLD_BOUNDS}
+          boundsOptions={{ maxZoom: 2 }}
+          minZoom={0}
+          maxBounds={PAN_BOUNDS}
+          maxBoundsViscosity={1}
+          maxZoom={19}
+          scrollWheelZoom
+          keyboard
+          zoomControl={false}
+          attributionControl={false}
+        >
+          {!readOnly ? <TileLayer url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" noWrap /> : null}
+          <ZoomControl position="bottomright" />
+          <MapAccessibility describedBy="map-keyboard-help" />
+          <ViewportBoundsReporter onChange={reportViewportBounds} />
+          {!readOnly ? <MapPositionSelector onSelectPosition={handleMapPositionSelect} /> : null}
+          <SelectedRegionViewport region={activeRegion} point={selectedPosition} readOnly={readOnly} />
+          {displayedBoundaries.map((boundary) => (
+            <GeoJSON
+              key={boundary.stateCode}
+              data={boundary.data}
+              style={
+                boundary.stateCode === selectedStateBoundary?.stateCode
+                  ? theme.selectedBoundary
+                  : theme.boundary
+              }
               interactive={false}
-              pathOptions={theme.pointDot}
             />
-          </>
-        ) : null}
-      </MapContainer>
+          ))}
+          {selectedPosition?.type === 'Point' ? (
+            <>
+              <CircleMarker
+                center={[selectedPosition.coordinates[1], selectedPosition.coordinates[0]]}
+                radius={11}
+                pathOptions={theme.pointRing}
+              >
+                <Tooltip>{isDefaultPoint ? 'Region center (default point)' : 'Selected analysis point'}</Tooltip>
+              </CircleMarker>
+              <CircleMarker
+                center={[selectedPosition.coordinates[1], selectedPosition.coordinates[0]]}
+                radius={3.5}
+                interactive={false}
+                pathOptions={theme.pointDot}
+              />
+            </>
+          ) : null}
+        </MapContainer>
+      ) : (
+        <Suspense fallback={<div className="map-placeholder" role="status">Loading map…</div>}>
+          {mapView === 'google' && googleMapsKey ? (
+            <GoogleMap3D
+              apiKey={googleMapsKey} point={selectedPosition}
+              resetVersion={worldReset} onSelectPosition={onSelectPosition}
+            />
+          ) : (
+            <WorldGlobe point={selectedPosition} resetVersion={worldReset} onSelectPosition={onSelectPosition} />
+          )}
+        </Suspense>
+      )}
+      {!readOnly ? (
+        <>
+          <div className="map-view-controls">
+            <select
+              aria-label="Map view"
+              ref={mapViewControl}
+              value={mapView}
+              onChange={(event) => changeMapView(event.target.value as MapView)}
+            >
+              <option value="street">Street map</option>
+              <option value="globe">3D globe</option>
+              <option value="google" disabled={!googleMapsKey}>
+                {googleMapsKey ? 'Google 3D' : 'Google 3D (key required)'}
+              </option>
+            </select>
+            <button
+              type="button"
+              onClick={() => {
+                if (mapRef.current) showWorld(mapRef.current);
+                else setWorldReset((value) => value + 1);
+              }}
+            >
+              World view
+            </button>
+            {!streetMode ? (
+              <button
+                className="map-return-button"
+                type="button"
+                onClick={() => {
+                  changeMapView('street');
+                  mapViewControl.current?.focus({ preventScroll: true });
+                }}
+              >
+                Back to street map
+              </button>
+            ) : null}
+          </div>
+          <CurrentWeather point={selectedPosition} />
+        </>
+      ) : null}
       <p className="visually-hidden" id="map-keyboard-help">
-        Click the map to choose the point. With the keyboard, use the arrow keys to move the map and press Enter to
-        choose the point at the center of the view, or type latitude and longitude in the Point menu.
+        {readOnly
+          ? 'Archived observation point. Use arrow keys to pan the map. Panning does not query environmental data or change this record.'
+          : 'Click the map to choose the point. With the keyboard, use the arrow keys to move the map and press Enter to choose the point at the center of the view, or type latitude and longitude in the Point menu.'}
       </p>
-      <p className="map-boundary-status" role="status" aria-live="polite">
-        {boundaryMessage}
-      </p>
-      <p className="map-attribution">
-        Boundaries:{' '}
-        <a href="https://www.ibge.gov.br/" target="_blank" rel="noreferrer noopener">
-          IBGE
-        </a>{' '}
-        &copy; IBGE &middot;{' '}
-        <a href="https://leafletjs.com/" target="_blank" rel="noreferrer noopener">
-          Leaflet
-        </a>
-      </p>
+      {streetMode && boundaryMessage ? (
+        <p className="map-boundary-status" role="status" aria-live="polite">
+          {boundaryMessage}
+        </p>
+      ) : null}
+      {streetMode ? (
+        <p className="map-attribution">
+          {!readOnly ? (
+            <>
+              &copy;{' '}
+              <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">
+                OpenStreetMap
+              </a>{' '}
+              &middot;{' '}
+            </>
+          ) : null}
+          &copy;{' '}
+          <a href="https://www.ibge.gov.br/" target="_blank" rel="noreferrer noopener">
+            IBGE
+          </a>{' '}
+          &middot;{' '}
+          <a href="https://leafletjs.com/" target="_blank" rel="noreferrer noopener">
+            Leaflet
+          </a>
+        </p>
+      ) : null}
     </div>
   );
 }

@@ -1,149 +1,102 @@
-# Earth Detective API contract
+# Earth Detective API V1
 
-Base path: `/api/v1`
+The API uses `/api/v1`. Health is available at `/health` and `/api/v1/health`.
 
-## Endpoints
+| Method | Path relative to `/api/v1` | Result |
+| --- | --- | --- |
+| GET | `/variables` and `/nasa/variables` | Meteomatics and NASA variable catalogs |
+| GET | `/nasa/sources` | NASA reference pages and reachability |
+| GET | `/regions` | Region metadata, including map center and `boundaryStateCodes` |
+| GET | `/availability?variable_id=…&region_id=…` | Configured bounds, eligibility and warning |
+| POST | `/analyses` | Acquire or reuse a bounded cached analysis and persist its result |
+| GET | `/analyses?limit=20&offset=0` | Saved analysis summaries, newest first |
+| GET | `/analyses/{id}` | Full saved analysis |
+| GET | `/analyses/{id}/export` | CSV for the same saved analysis |
+| POST | `/analyses/export` | Compatibility export by request, which may query after cache expiry |
 
-- `GET /health`
-- `GET /variables`
-- `GET /regions`
-- `GET /availability?variable_id=...&region_id=...`
-- `POST /analyses`
-- `POST /analyses/export`
-
-## Analysis request body
+## Request
 
 ```json
 {
-  "variable_id": "air_temperature",
+  "variable_id": "nasa_power_temperature",
   "region_id": "ceara",
-  "start_date": "2015-01-01",
+  "start_date": "2020-01-01",
   "end_date": "2023-12-31",
-  "dataset_version": "meteomatics-live",
-  "spatial_query": {
-    "type": "Point",
-    "coordinates": [-39.5, -5.2]
-  }
+  "dataset_version": "nasa-power-monthly",
+  "spatial_query": {"type": "Point", "coordinates": [-39.5, -5.2]}
 }
 ```
 
-`spatial_query` is optional. Coordinates are WGS 84 GeoJSON order
-`[longitude, latitude]`; when omitted, the API uses the selected region's
-catalog center. Analysis requests always use Meteomatics and never fall back to
-synthetic values.
+Both dates are inclusive ISO calendar dates. `spatial_query` is optional and defaults to
+the catalog center. Point coordinates are WGS 84 `[longitude, latitude]`. Region IDs provide
+map context for a grid cell or model point. Use `region_id: "world"` with explicit
+`spatial_query` for coordinates anywhere in the world. `GET /regions` advertises this
+mode with `center: null` and an empty list of IBGE boundaries. Omitting its point returns
+`422`. The public POWER temperature product uses the MERRA-2 grid at 0.5° latitude
+× 0.625° longitude. `dataset_version` can be omitted to select
+the provider's configured version. POWER accepts up to 360 complete months, excludes
+partial edge months and uses the last complete calendar year as its catalog upper bound.
+Authenticated NASA archives retain the 120-month limit.
 
-Region records include `boundaryStateCodes`, using IBGE state codes for the free
-official state boundaries displayed on the map. The frontend fetches simplified
-GeoJSON only for member states that intersect the current map viewport. This
-highlight is a geographic boundary mask. Click the map to choose an analysis
-point; otherwise, climate analysis uses the selected region's center. Neither is
-an area-weighted regional average.
+## Response and quality
 
-## Data source configuration
+The [JSON Schema](analysis-response.schema.json) describes newly created analyses.
+Complete synthetic test responses cover [descriptive](fixtures/descriptive.json),
+[insufficient data](fixtures/insufficient_data.json), and [unsupported](fixtures/unsupported.json).
+NASA responses add `statistics` and `forecast`, each nullable. The forecast is a separate
+historical same-calendar-month mean where the sample supports it.
 
-The backend uses Meteomatics only. Set `METEOMATICS_USERNAME` and
-`METEOMATICS_PASSWORD` server-side before starting it.
-`METEOMATICS_MODEL` is optional and defaults to `mix`. Restart the backend after
-changing these variables. Credentials must never be sent by the browser.
-The placeholder configuration is in [`backend/.env.example`](../backend/.env.example);
-copy it to a private environment file and enter credentials locally.
+`requested_period` echoes the dates. `effective_period` spans the first and last non-null
+monthly values, with the last date set to the last day of that month. Both effective dates
+are null if every month is missing. `series` and `analysis_series` retain gaps with null
+values. `quality.sample_count` counts finite months, `expected_count` counts represented
+months, and `coverage_fraction` is their ratio. POWER point coverage is binary per month
+and describes returned monthly values. Hourly coverage is available separately from Meteomatics.
 
-Analysis and export requests are limited to four concurrent operations and
-request bodies are limited to 16 KiB. A saturated analysis service returns
-HTTP 503 with `Retry-After: 1`; oversized bodies return HTTP 413.
+POWER records the requested point and, in `quality.provider_metadata`, the query URL,
+source API version, canonical provider response SHA-256 and time standard. `retrieved_at`
+records UTC acquisition. `dataset_version` identifies the product route. The POWER
+response hash identifies the acquired content, excluding request processing times.
 
-Errors use a stable shape while retaining `detail` for existing clients:
+## Trend semantics
 
-```json
-{
-  "detail": "Request validation failed",
-  "error": {
-    "code": "invalid_request",
-    "message": "Request validation failed"
-  }
-}
-```
+| `inference_status` | `applicable` | Rate | p-value, CI, significant | `inference_reason` |
+| --- | --- | --- | --- | --- |
+| `descriptive` | true | finite | null | Explicit reason in English |
+| `insufficient_data` | false | null | null | Minimum data rule in English |
+| `unsupported` | false | null | null | Limitation in English |
+| `validated` | true | finite | non-null | Null if unrestricted |
 
-Common error codes include `invalid_request` (422), `not_found` (404),
-`conflict` (409), `request_too_large` (413), `service_unavailable` (503), and
-`upstream_error` (502) or `internal_error` (500). Unexpected errors are logged
-by request path and error type only; internal exception details are not
-returned to callers.
+The current methods are `nasa-monthly-v2` and `meteomatics-hourly-monthly-v3`.
+V1 reserves `validated` for methods with evidence for the selected series. This release
+emits the other three states. `slope_unit` already includes “per decade.” Direction
+retains `increasing`, `decreasing`, `stable`, and `undetermined`. Stable denotes a
+near-zero fitted slope. `applicable` is independent of statistical significance.
+Historical payloads keep the original method and fields. Clients should flag historical
+inference as unvalidated when either new field is absent.
 
-For live Meteomatics analyses:
+## Errors, configuration and storage
 
-- The variable catalog exposes these point time series (each selectable as its
-  own chart):
+Errors retain `detail` and `error.code`/`error.message`. Common codes include
+`invalid_request` (422), `not_found` (404), `conflict` (409),
+`request_too_large` (413), `upstream_error` (502), and
+`service_unavailable` or `analysis_storage_unavailable` (503).
+Coordinates, complete NASA periods, product bounds, and version compatibility are
+validated before querying. The request body limit is 16 KiB. Four concurrent uncached
+analyses per process are allowed. Saturation returns `Retry-After: 1`. Upstream failures
+produce structured errors without synthetic fallback.
 
-  | Variable | Meteomatics parameter | Monthly aggregation |
-  | --- | --- | --- |
-  | Air temperature at 2 m | `t_2m:C` | Mean |
-  | Precipitation | `precip_1h:mm` | Sum |
-  | Soil water content (0-7 cm) | `volumetric_soil_water_-5cm:m3m3` | Mean |
-  | Soil water content (7-28 cm) | `volumetric_soil_water_-15cm:m3m3` | Mean |
-  | Soil water content (28-100 cm) | `volumetric_soil_water_-50cm:m3m3` | Mean |
-  | Soil water content (100-289 cm) | `volumetric_soil_water_-150cm:m3m3` | Mean |
-  | Soil moisture index (0-7, 7-28, 28-100, 100-289 cm) | `soil_moisture_index` at representative depths -5, -15, -50, -150 cm | Mean |
-  | Soil moisture deficit | `soil_moisture_deficit:mm` | Mean |
-  | Soil temperature (0-7, 7-28, 28-100, 100-289 cm) | `t_-5cm:C`, `t_-15cm:C`, `t_-50cm:C`, `t_-150cm:C` | Mean |
-  | Wind speed at 10 m | `wind_speed_10m:ms` | Mean |
-  | Wind direction at 10 m | `wind_dir_10m:d` | Circular mean (0-360 degrees) |
-  | Relative humidity at 2 m | `relative_humidity_2m:p` | Mean |
-  | Mean sea-level pressure | `msl_pressure:hPa` | Mean |
-  | Global radiation | `global_rad:W` | Mean |
-  | Reference evapotranspiration | `evapotranspiration_1h:mm` | Sum |
+Use a same-origin proxy for `/api/v1` or set `ALLOWED_ORIGINS` on the backend to a
+comma-separated list of explicit HTTP(S) origins with optional ports. Cross-origin
+credentials are disabled. POWER uses a public endpoint. Experimental Meteomatics and
+Earthdata access requires `ENABLE_UNVERIFIED_PROVIDERS=1` plus server-only
+`METEOMATICS_USERNAME` and `METEOMATICS_PASSWORD` or `EARTHDATA_TOKEN`.
+`METEOMATICS_MODEL` is optional. Availability describes configuration, with live
+coverage established by a successful query. Stored analyses remain readable when
+provider access changes.
 
-- Hourly observations are aggregated to calendar months. A month with less than
-  90% hourly coverage is returned as `null`, never as zero. A mathematically
-  undefined circular mean is also returned as `null`.
-- The variable catalog groups measurements and marks whether trend analysis is
-  supported. Wind direction is shown as a circular series; linear trend,
-  significance, and confidence intervals are not calculated for it.
-- The parameters above are configured in the API, but the account's plan,
-  product access, model availability, and historical coverage are not verified
-  until the corresponding live analysis request succeeds. Availability does not
-  guarantee account entitlement.
-- Queries use the clicked map coordinate or, if omitted, the configured
-  region-center coordinate. This is a point query, not an area-weighted regional
-  mean.
-- Analysis responses include the actual `spatial_query` as a GeoJSON `Point`,
-  with coordinates ordered `[longitude, latitude]` in WGS 84.
-- Static soil properties such as soil type are not time series and are not
-  included in this chart catalog.
-- `dataset_version` is reported as `meteomatics-live`; it is not an immutable
-  provider archive. Results include that limitation in `quality.warnings`.
-- Availability can confirm a configured parameter, but account access and
-  historical coverage are only confirmed by a successful analysis query.
-- A bounded five-minute analysis-response cache is keyed by variable, region,
-  period, dataset version, method version, provider model, selected point
-  geometry, and the statistical parameters (alpha, minimum sample size,
-  estimator, inference method, and direction threshold). Cached analysis
-  responses are reused for CSV export so the exported observations and trend
-  match the displayed result.
-  The provider-series cache is also bounded and keyed by its query filters,
-  model, dataset version, and method version. Both caches are process-local.
-
-Provider configuration failures return HTTP 503; provider request/response
-failures return HTTP 502; unsupported variables and periods over ten years
-return HTTP 422. A requested non-live dataset version returns HTTP 409. Live
-analysis fails explicitly and does not fall back to synthetic values.
-
-## Example request
-
-The JSON body shown above can be submitted to `POST /api/v1/analyses`:
-
-```powershell
-$body = @{
-  variable_id = "air_temperature"
-  region_id = "ceara"
-  start_date = "2015-01-01"
-  end_date = "2023-12-31"
-  dataset_version = "meteomatics-live"
-} | ConvertTo-Json
-
-Invoke-RestMethod `
-  -Uri "http://127.0.0.1:8000/api/v1/analyses" `
-  -Method Post `
-  -ContentType "application/json" `
-  -Body $body
-```
+Set `ANALYSIS_DB_PATH` to a writable SQLite file on the persistent filesystem used by
+the backend. The response is written before a successful POST returns. The existing
+SQLite layout is compatible. The CSV preserves the original eight columns, then appends
+unit, inference, analysis ID and provenance columns. `GET /analyses/{id}` supplies the full
+saved period, parameters, series and quality metadata as JSON. Null CSV cells are empty.

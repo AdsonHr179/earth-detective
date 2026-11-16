@@ -14,7 +14,9 @@ export function buildCitation(
   }
   const lines = [
     `${parts.join(', ')}.`,
-    `Period ${analysis.effective_start_date} to ${analysis.effective_end_date}.`,
+    analysis.effective_start_date && analysis.effective_end_date
+      ? `Period ${analysis.effective_start_date} to ${analysis.effective_end_date}.`
+      : `Observed period unavailable. Requested ${analysis.start_date} to ${analysis.end_date}.`,
     `Source: ${analysis.source} (${analysis.product}).`,
     `Dataset ${analysis.dataset_version}; method ${analysis.method_version}; analysis id ${analysis.analysis_id}.`,
   ];

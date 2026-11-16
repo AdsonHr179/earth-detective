@@ -1,0 +1,99 @@
+{
+  "scope": "LIVE NASA request on uncorrected base; not scientific acceptance of B or public deployment",
+  "observed_at_utc": "2026-11-15T20:12:26.155604+00:00",
+  "request": {
+    "variable_id": "nasa_power_temperature",
+    "region_id": "ceara",
+    "start_date": "2020-01-01",
+    "end_date": "2023-12-31",
+    "spatial_query": {
+      "type": "Point",
+      "coordinates": [
+        -39.5,
+        -5.2
+      ]
+    }
+  },
+  "status": 200,
+  "elapsed_seconds": 1.59,
+  "analysis_id": "27fdacf2-c252-4fd5-a66c-409a028223f8",
+  "source": "NASA POWER / MERRA-2",
+  "method_version": "nasa-monthly-v1",
+  "retrieved_at": "2026-11-15T20:12:26.046818+00:00",
+  "effective_period": {
+    "start_date": "2020-01-01",
+    "end_date": "2023-12-31"
+  },
+  "samples": 48,
+  "saved_get_equals_original": true,
+  "export_saved_by_id": true,
+  "inference_status": "MISSING: frontend must show legacy warning",
+  "catalog_checks": {
+    "/health": {
+      "status": 200,
+      "body": {
+        "status": "ok",
+        "service": "Earth Detective",
+        "version": "0.1.0",
+        "data_source": "meteomatics"
+      }
+    },
+    "/api/v1/nasa/variables": {
+      "status": 200,
+      "body": [
+        {
+          "id": "nasa_power_temperature",
+          "name": "NASA POWER \u00b7 Air temperature at 2 m",
+          "unit": "\u00b0C",
+          "description": "Monthly mean temperature derived from MERRA-2 and distributed by NASA POWER.",
+          "source": "NASA POWER / MERRA-2",
+          "group": "NASA Earth data",
+          "trend_supported": true,
+          "circular": false
+        },
+        {
+          "id": "nasa_imerg_precipitation",
+          "name": "IMERG Final V07 \u00b7 Precipitation",
+          "unit": "mm/month",
+          "description": "Monthly precipitation estimated by satellite and adjusted with rain gauge data.",
+          "source": "NASA GES DISC",
+          "group": "NASA Earth data",
+          "trend_supported": true,
+          "circular": false
+        },
+        {
+          "id": "nasa_merra2_temperature",
+          "name": "MERRA-2 \u00b7 Air temperature at 2 m",
+          "unit": "\u00b0C",
+          "description": "Monthly mean air temperature from the MERRA-2 single-level diagnostics archive.",
+          "source": "NASA GES DISC",
+          "group": "NASA Earth data",
+          "trend_supported": true,
+          "circular": false
+        },
+        {
+          "id": "nasa_gldas_soil_water",
+          "name": "GLDAS Noah v2.1 \u00b7 Soil water (0\u201310 cm)",
+          "unit": "kg/m\u00b2",
+          "description": "Modeled monthly water mass per unit area in the top 10 cm of soil.",
+          "source": "NASA GES DISC",
+          "group": "NASA Earth data",
+          "trend_supported": true,
+          "circular": false
+        }
+      ]
+    },
+    "/api/v1/availability?variable_id=nasa_power_temperature&region_id=ceara": {
+      "status": 200,
+      "body": {
+        "variable_id": "nasa_power_temperature",
+        "region_id": "ceara",
+        "active_version": "nasa-power-monthly",
+        "available": true,
+        "start_date": "1981-01-01",
+        "end_date": "2025-12-31",
+        "warning": null
+      }
+    }
+  }
+}

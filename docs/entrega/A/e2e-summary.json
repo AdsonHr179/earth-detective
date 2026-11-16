@@ -1,0 +1,41 @@
+{
+  "scope": "TEST FIXTURE ONLY — not NASA, public deployment, or persistence proof",
+  "head": "09b49c31242f2c8c6cb732cb58cf05ff564749d4",
+  "source_ui_diff_sha256": "59dcf917530b395a7d46ae8abd9f9ef837d5c90735a0bcc746a9f9ade2f3790b",
+  "node": "v24.18.0",
+  "playwright": "1.65.1",
+  "environments": [
+    "TEST FIXTURE — not real data\nBrowser: 157.0.4341.60"
+  ],
+  "final_stats": {
+    "startTime": "2026-11-15T20:06:31.865Z",
+    "duration": 40867.723,
+    "expected": 4,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "controlled_defect": {
+    "command": "E2E_CONTROLLED_DEFECT=1 PLAYWRIGHT_CHANNEL=msedge npm run test:e2e -- --project=desktop --grep \"query, interpret\"",
+    "expected_failure": "Descriptive estimate only badge missing; log e2e-controlled-red.log",
+    "exit": 1
+  },
+  "passing_command": "PLAYWRIGHT_CHANNEL=msedge E2E_CONTROLLED_DEFECT=0 npm run test:e2e",
+  "validation": [
+    "4 browser tests passed, no retries",
+    "npx eslint playwright.config.ts exit 0",
+    "git diff --check exit 0"
+  ],
+  "sources": [
+    "https://playwright.dev/docs/test-webserver",
+    "https://playwright.dev/docs/network",
+    "https://playwright.dev/docs/downloads"
+  ],
+  "artifacts": {
+    "e2e-controlled-red.png": "938ee8a82225f5594d11babb3b8ec397eb210b68efaed87c7345fa451b2ced57",
+    "e2e-desktop-fixture-method.png": "6c21dd223ff175c69b6310a5247fc48d05143b2144a72e1d2fe774fe30c4bb54",
+    "e2e-desktop-fixture.png": "55e4e0109d9c0e0eff0c7804f5d7b4769c03c849bee6c9e7f400478a4ae3d843",
+    "e2e-mobile-390-fixture-method.png": "e0979b21f5350e2043ddf617ce8ae93f26a5eeed9bddfbb8784a6da4123f0cae",
+    "e2e-mobile-390-fixture.png": "cdbd899d32eea6c6ac98e96e2c413d205a1e49cd1291613746c706841ee7a5e5"
+  }
+}

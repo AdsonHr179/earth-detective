@@ -194,11 +194,11 @@ p {
   }
 }
 
-/* Mobile: map takes ~40% of the height, the result is a bottom sheet below it */
+/* Mobile: keep the map usable above the result sheet. */
 @media (max-width: 899px) {
   .stage {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: 40% minmax(0, 1fr);
+    grid-template-rows: min(72%, max(340px, 58%)) minmax(0, 1fr);
   }
 
   .stage--sheet-collapsed {
@@ -218,9 +218,9 @@ p {
     padding: 4px 16px 32px;
   }
 
-  /* the chips take the top of the map area, so the map itself starts below them and stays centred on the point */
+  /* The three rows of map controls sit above the map on narrow screens. */
   .map-layer {
-    top: 108px;
+    top: 156px;
   }
 }
 

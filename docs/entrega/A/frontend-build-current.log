@@ -1,0 +1,15 @@
+
+> earth-detective-frontend@0.1.0 build
+> tsc -b && vite build
+
+vite v5.4.21 building for production...
+transforming...
+✓ 114 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                      0.68 kB │ gzip:  0.38 kB
+dist/assets/MapStage-CIGW-MKW.css   15.61 kB │ gzip:  6.46 kB
+dist/assets/index-5L8qOxVn.css      18.38 kB │ gzip:  4.50 kB
+dist/assets/MapStage-BDJBDar_.js   162.01 kB │ gzip: 47.99 kB
+dist/assets/index-CwZXNR43.js      202.87 kB │ gzip: 65.36 kB
+✓ built in 7.75s

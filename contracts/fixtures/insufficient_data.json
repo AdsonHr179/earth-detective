@@ -1,0 +1,129 @@
+{
+  "analysis_id": "synthetic-fixture-insufficient_data",
+  "schema_version": "1.0",
+  "dataset_version": "nasa-power-monthly",
+  "method_version": "nasa-monthly-v2",
+  "variable_id": "nasa_power_temperature",
+  "region_id": "ceara",
+  "requested_period": {
+    "start_date": "2020-01-01",
+    "end_date": "2020-04-30"
+  },
+  "effective_period": {
+    "start_date": "2020-02-01",
+    "end_date": "2020-04-30"
+  },
+  "source": "NASA POWER / MERRA-2",
+  "product": "NASA POWER · Air temperature at 2 m",
+  "source_url": "https://power.larc.nasa.gov/docs/services/api/temporal/monthly/",
+  "retrieved_at": "2020-05-01T00:00:00+00:00",
+  "region_version": "selected-point-v1",
+  "spatial_query": {
+    "type": "Point",
+    "coordinates": [
+      -39.5,
+      -5.2
+    ]
+  },
+  "series": [
+    {
+      "timestamp": "2020-01-01",
+      "value": null,
+      "unit": "°C",
+      "quality_flags": "missing",
+      "coverage_fraction": 0.0
+    },
+    {
+      "timestamp": "2020-02-01",
+      "value": 20.6,
+      "unit": "°C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2020-03-01",
+      "value": null,
+      "unit": "°C",
+      "quality_flags": "missing",
+      "coverage_fraction": 0.0
+    },
+    {
+      "timestamp": "2020-04-01",
+      "value": 21.8,
+      "unit": "°C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    }
+  ],
+  "analysis_series": [
+    {
+      "timestamp": "2020-01-01",
+      "value": null,
+      "unit": "°C",
+      "quality_flags": "missing",
+      "coverage_fraction": 0.0
+    },
+    {
+      "timestamp": "2020-02-01",
+      "value": 20.6,
+      "unit": "°C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2020-03-01",
+      "value": null,
+      "unit": "°C",
+      "quality_flags": "missing",
+      "coverage_fraction": 0.0
+    },
+    {
+      "timestamp": "2020-04-01",
+      "value": 21.8,
+      "unit": "°C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    }
+  ],
+  "trend": {
+    "direction": "undetermined",
+    "applicable": false,
+    "slope_per_decade": null,
+    "slope_unit": "°C per decade",
+    "confidence_interval": null,
+    "p_value": null,
+    "alpha": 0.05,
+    "estimator": "linear_regression",
+    "inference_method": "not_enough_data",
+    "significant": null,
+    "inference_status": "insufficient_data",
+    "inference_reason": "At least three finite observations at distinct dates are required."
+  },
+  "quality": {
+    "sample_count": 2,
+    "expected_count": 4,
+    "coverage_fraction": 0.5,
+    "warnings": [
+      "Missing months appear as gaps in the historical series."
+    ],
+    "provider_metadata": {
+      "query_url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=T2M&community=AG&longitude=-39.5&latitude=-5.2&format=JSON&start=2020&end=2020",
+      "response_sha256": "4ed577c40984d642d52ea6e98f6c2ec51591ffefbdaa3beb99c2b5afeac3c9f6",
+      "source_api_version": "synthetic",
+      "time_standard": "LST"
+    }
+  },
+  "explanation": {
+    "summary": "Monthly data for the selected NASA grid cell. At least three finite observations at distinct dates are required.",
+    "limitations": "The data represent a grid cell at the selected point. Seasonal variability and serial dependence limit interpretation. The fitted rate describes only the observed period."
+  },
+  "statistics": {
+    "count": 2,
+    "mean": 21.200000000000003,
+    "median": 21.200000000000003,
+    "min": 20.6,
+    "max": 21.8,
+    "standard_deviation": 0.8485281374238566
+  },
+  "forecast": null
+}

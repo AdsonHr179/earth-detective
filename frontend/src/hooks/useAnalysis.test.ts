@@ -218,4 +218,66 @@ describe('useAnalysis', () => {
     expect(result.current.error).toBeNull();
     expect(result.current.status).toBe('idle');
   });
+
+  it.each(['cancel', 'reset', 'filter change'] as const)(
+    'discards a saved response after %s and does not retry the obsolete id',
+    async (action) => {
+      const gate = deferred();
+      let gets = 0;
+      let replied = false;
+      server.use(
+        http.get('*/api/v1/analyses/:id', async () => {
+          gets += 1;
+          await gate.promise;
+          replied = true;
+          return HttpResponse.json(fixtureBackendAnalysis({ analysis_id: 'old-saved' }));
+        }),
+      );
+      const { result } = setup();
+
+      act(() => result.current.loadSaved('old-saved'));
+      await waitFor(() => expect(gets).toBe(1));
+      act(() => {
+        if (action === 'cancel') result.current.cancel();
+        else if (action === 'reset') result.current.reset();
+        else result.current.setVariable('precipitation');
+      });
+      gate.release();
+      await waitFor(() => expect(replied).toBe(true));
+      act(() => result.current.retry());
+
+      expect(result.current.status).toBe('idle');
+      expect(result.current.analysis).toBeNull();
+      expect(result.current.canRetry).toBe(false);
+      expect(gets).toBe(1);
+      if (action === 'filter change') expect(result.current.filters.variableId).toBe('precipitation');
+    },
+  );
+
+  it('does not let an older saved response replace a more recently opened saved result', async () => {
+    const slow = deferred();
+    let oldStarted = false;
+    let oldReplied = false;
+    server.use(
+      http.get('*/api/v1/analyses/:id', async ({ params }) => {
+        if (params.id === 'old-saved') {
+          oldStarted = true;
+          await slow.promise;
+          oldReplied = true;
+        }
+        return HttpResponse.json(fixtureBackendAnalysis({ analysis_id: String(params.id) }));
+      }),
+    );
+    const { result } = setup();
+
+    act(() => result.current.loadSaved('old-saved'));
+    await waitFor(() => expect(oldStarted).toBe(true));
+    act(() => result.current.loadSaved('new-saved'));
+    await waitFor(() => expect(result.current.analysis?.analysis_id).toBe('new-saved'));
+    slow.release();
+    await waitFor(() => expect(oldReplied).toBe(true));
+
+    expect(result.current.status).toBe('success');
+    expect(result.current.analysis?.analysis_id).toBe('new-saved');
+  });
 });

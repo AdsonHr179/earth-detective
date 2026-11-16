@@ -16,8 +16,9 @@ function isHttps(url: string) {
 /** Full provenance: source, product, versions, periods, point and warnings. Only fields the backend returned. */
 export default function ProvenanceBlock({ analysis }: { analysis: AnalysisResponse }) {
   const { trend } = analysis;
-  const interval = formatInterval(trend.confidence_interval, analysis.unit);
+  const interval = trend.inference_status === 'validated' ? formatInterval(trend.confidence_interval, trend.slope_unit, true) : null;
   const point = analysis.spatial_query?.type === 'Point' ? analysis.spatial_query.coordinates : null;
+  const providerHash = analysis.quality.provider_metadata?.response_sha256;
 
   return (
     <details className="more">
@@ -43,6 +44,10 @@ export default function ProvenanceBlock({ analysis }: { analysis: AnalysisRespon
         </dd>
         <dt>Period analysed</dt>
         <dd>{analysis.effective_period}</dd>
+        <dt>Period requested</dt>
+        <dd>{analysis.start_date} to {analysis.end_date}</dd>
+        <dt>Inference status reported by service</dt>
+        <dd>{trend.inference_status === 'legacy' ? 'Legacy response; not validated under V1' : trend.inference_status}</dd>
         {analysis.retrieved_at ? (
           <>
             <dt>Retrieved</dt>
@@ -70,7 +75,11 @@ export default function ProvenanceBlock({ analysis }: { analysis: AnalysisRespon
         ) : null}
         <dt>Analysis id</dt>
         <dd>{analysis.analysis_id}</dd>
+        {typeof providerHash === 'string' && /^[a-f0-9]{64}$/i.test(providerHash) ? (
+          <><dt>Provider response SHA-256</dt><dd>{providerHash}</dd></>
+        ) : null}
       </dl>
+      <p><a href="/credits.html" target="_blank" rel="noreferrer">Data, software and AI credits</a></p>
     </details>
   );
 }

@@ -1,0 +1,40 @@
+[
+  {
+    "name": "leaflet",
+    "version": "1.9.4",
+    "license_metadata": "BSD-2-Clause",
+    "repository": {
+      "type": "git",
+      "url": "git://github.com/Leaflet/Leaflet.git"
+    }
+  },
+  {
+    "name": "react",
+    "version": "18.3.1",
+    "license_metadata": "MIT",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/facebook/react.git",
+      "directory": "packages/react"
+    }
+  },
+  {
+    "name": "react-dom",
+    "version": "18.3.1",
+    "license_metadata": "MIT",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/facebook/react.git",
+      "directory": "packages/react-dom"
+    }
+  },
+  {
+    "name": "react-leaflet",
+    "version": "4.2.1",
+    "license_metadata": "Hippocratic-2.1",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/PaulLeCam/react-leaflet.git"
+    }
+  }
+]

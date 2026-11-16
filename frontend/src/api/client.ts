@@ -21,7 +21,7 @@ export type RegionRecord = {
   center: {
     latitude: number;
     longitude: number;
-  };
+  } | null;
 };
 
 export type SavedAnalysisSummary = {
@@ -86,6 +86,8 @@ export type MonthlyForecast = {
   backtest_count: number;
 };
 
+export type InferenceStatus = 'validated' | 'descriptive' | 'insufficient_data' | 'unsupported';
+
 export type AnalysisResponse = {
   analysis_id: string;
   variable_id: string;
@@ -99,8 +101,8 @@ export type AnalysisResponse = {
   end_date: string;
   effective_period: string;
   /** Effective period as separate ISO dates (same period as `effective_period`). */
-  effective_start_date: string;
-  effective_end_date: string;
+  effective_start_date: string | null;
+  effective_end_date: string | null;
   provenance: string;
   source: string;
   product: string;
@@ -113,6 +115,9 @@ export type AnalysisResponse = {
   coverage: number;
   valid_observations: number;
   trend: {
+    inference_status: InferenceStatus | 'legacy';
+    inference_reason: string | null;
+    slope_unit: string;
     direction: 'increasing' | 'decreasing' | 'stable' | 'undetermined';
     applicable: boolean;
     rate_per_decade: number | null;
@@ -125,6 +130,7 @@ export type AnalysisResponse = {
     explanation: string;
   };
   quality: {
+    provider_metadata: Record<string, unknown> | null;
     missing_values: number;
     coverage: number;
     hourly_coverage: number | null;
@@ -145,7 +151,7 @@ export type BackendAnalysisResponse = {
   region_id: string;
   spatial_query?: GeoJSONPoint | null;
   requested_period: { start_date: string; end_date: string };
-  effective_period: { start_date: string; end_date: string };
+  effective_period: { start_date: string | null; end_date: string | null };
   source: string;
   product: string;
   source_url: string;
@@ -158,6 +164,9 @@ export type BackendAnalysisResponse = {
     coverage_fraction?: number | null;
   }>;
   trend: {
+    inference_status?: InferenceStatus;
+    inference_reason?: string | null;
+    slope_unit?: string | null;
     direction: AnalysisResponse['trend']['direction'];
     applicable?: boolean;
     slope_per_decade: number | null;
@@ -169,6 +178,7 @@ export type BackendAnalysisResponse = {
     confidence_interval: [number, number] | null;
   };
   quality: {
+    provider_metadata?: Record<string, unknown> | null;
     sample_count: number;
     expected_count: number;
     coverage_fraction: number;
@@ -257,6 +267,16 @@ export function adaptBackendAnalysis(result: BackendAnalysisResponse): AnalysisR
   }));
   const validObservations = chartPoints.filter((point) => point.value !== null).length;
   const coverage = result.quality.coverage_fraction * 100;
+  const statuses: readonly string[] = ['validated', 'descriptive', 'insufficient_data', 'unsupported'];
+  const inferenceStatus = result.trend.inference_status && statuses.includes(result.trend.inference_status)
+    && (result.trend.inference_reason === null || typeof result.trend.inference_reason === 'string')
+    ? result.trend.inference_status : 'legacy';
+  const validated = inferenceStatus === 'validated';
+  const applicable = result.trend.applicable ?? true;
+  const magnitudeAllowed = applicable && validObservations > 0 && inferenceStatus !== 'insufficient_data' && inferenceStatus !== 'unsupported';
+  const slope = magnitudeAllowed && Number.isFinite(result.trend.slope_per_decade)
+    ? result.trend.slope_per_decade : null;
+  const inferenceAllowed = validated && slope !== null;
 
   return {
     analysis_id: result.analysis_id,
@@ -269,7 +289,8 @@ export function adaptBackendAnalysis(result: BackendAnalysisResponse): AnalysisR
     method_version: result.method_version,
     start_date: result.requested_period.start_date,
     end_date: result.requested_period.end_date,
-    effective_period: `${result.effective_period.start_date} to ${result.effective_period.end_date}`,
+    effective_period: result.effective_period.start_date && result.effective_period.end_date
+      ? `${result.effective_period.start_date} to ${result.effective_period.end_date}` : 'No valid observed period',
     effective_start_date: result.effective_period.start_date,
     effective_end_date: result.effective_period.end_date,
     provenance: `${result.source} · ${result.product} · ${result.source_url}`,
@@ -282,25 +303,31 @@ export function adaptBackendAnalysis(result: BackendAnalysisResponse): AnalysisR
     coverage,
     valid_observations: validObservations,
     trend: {
+      inference_status: inferenceStatus,
+      inference_reason: inferenceStatus === 'legacy'
+        ? 'Legacy analysis: inference was not validated under contract V1. The saved method version is preserved.'
+        : result.trend.inference_reason ?? (validated ? null : 'The service did not provide a restriction reason.'),
+      slope_unit: result.trend.slope_unit?.trim() || `${result.series[0]?.unit ?? ''} per decade`.trim(),
       direction: result.trend.direction,
-      applicable: result.trend.applicable ?? true,
-      rate_per_decade: result.trend.slope_per_decade,
+      applicable,
+      rate_per_decade: slope,
       alpha: result.trend.alpha,
-      significant: result.trend.significant,
+      significant: inferenceAllowed ? result.trend.significant : null,
       estimator: result.trend.estimator,
       inference_method: result.trend.inference_method,
-      p_value: result.trend.p_value,
-      confidence_interval: result.trend.confidence_interval,
+      p_value: inferenceAllowed ? result.trend.p_value : null,
+      confidence_interval: inferenceAllowed ? result.trend.confidence_interval : null,
       explanation: `${result.explanation.summary} ${result.explanation.limitations}`,
     },
     quality: {
+      provider_metadata: result.quality.provider_metadata ?? null,
       missing_values: result.quality.expected_count - validObservations,
       coverage,
       hourly_coverage:
         result.quality.hourly_coverage_fraction === undefined
           ? null
           : result.quality.hourly_coverage_fraction * 100,
-      insufficient_series: result.trend.slope_per_decade === null,
+      insufficient_series: slope === null,
     },
     chart_points: chartPoints,
     annual_points: [],
@@ -345,8 +372,8 @@ export async function fetchRegions(signal?: AbortSignal): Promise<RegionRecord[]
     regions.some(
       (region) =>
         !region ||
-        !Number.isFinite(region.center?.latitude) ||
-        !Number.isFinite(region.center?.longitude) ||
+        (region.center !== null &&
+          (!Number.isFinite(region.center?.latitude) || !Number.isFinite(region.center?.longitude))) ||
         !Array.isArray(region.boundaryStateCodes) ||
         region.boundaryStateCodes.some((code) => !/^\d{2}$/.test(code)),
     )

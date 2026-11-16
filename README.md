@@ -1,131 +1,82 @@
 # Earth Detective
 
-Earth Detective is an MVP for exploring environmental change using Earth observation data, time-series analysis, and accessible explanations for non-specialist users.
+Investigate monthly environmental observations at a selected point, inspect change over time, and reopen or export a saved analysis with its source and method identity.
 
-## Goals
+## Delivery status — 15 November 2026
 
-- Let users select an environmental variable, region, map position, and period.
-- Visualize monthly time series with provenance and quality indicators.
-- Compute an estimated trend and rate per decade.
-- Explain statistical evidence in clear English.
-- Export an analysis as CSV.
+Front A is being prepared on `delivery/adson-20261115`, from agreed base `09b49c31242f2c8c6cb732cb58cf05ff564749d4`. [Delivery tracking](docs/FINALIZACAO.md) distinguishes local tests, real queries, pending backend delivery and official submission. No public deployment or submitted project is claimed here.
 
-## Stack
+The baseline NASA POWER temperature case returned 48 real monthly observations on 15 November: one cell near longitude −39.5, latitude −5.2, January 2020–December 2023. This short point record is not a state average or evidence of long-term climate change. The baseline method has not been accepted as validated scientific inference. [Recorded query evidence](docs/entrega/A/nasa-real-baseline-summary.json) identifies its method and acquisition time.
 
-- Frontend: React + TypeScript + Vite
-- Backend: Python + FastAPI
-- Meteomatics Python connector for a server-side API connectivity check
-- Science: NumPy + SciPy + pandas
-- Data: Meteomatics Weather API, queried server-side
-- Testing: pytest + Vitest/Playwright-ready structure
+## Main journey
 
-## Repository layout
+1. Open the app and choose **Use NASA POWER case · 2020–2023**. This selects inputs; it does not invent or preload a conclusion.
+2. Choose **Run analysis**. Inspect observations, requested/effective periods, point, data coverage, method and source.
+3. Read the inference status and restriction reason. `descriptive` is a descriptive estimate, `insufficient_data`/`unsupported` show no inapplicable magnitude, and `validated` reflects the service's declared method status rather than external scientific certification. Saved responses missing V1 status/reason display a legacy warning and no significance seal or inferential interval. Missing values remain missing.
+4. Change a filter to mark the existing result out of date. **Results → Saved analyses** reopens an ID; retry repeats that GET. **Download CSV** exports the saved ID without recalculating.
 
-- `backend/` — FastAPI application and scientific module
-- `frontend/` — React interface
-- `data/` — catalog files
-- `pipelines/` — reproducible dataset-generation scripts
-- `contracts/` — API contract artifacts and schema files
-- `tests/` — backend and integration tests
-- `docs/` — supporting project documentation
+The main journey excludes the former projection. The response adapter still preserves saved forecast metadata for compatibility; it is not presented as a validated prediction. Regional labels locate a point; they do not imply spatial averaging.
 
-Project timeline and outstanding MVP work (Portuguese): [docs/CRONOGRAMA_DO_PROJETO_PT_BR.md](docs/CRONOGRAMA_DO_PROJETO_PT_BR.md).
+## Map views
 
-The English project foundation and architecture references are indexed in
-[docs/README.md](docs/README.md), including the [project overview](docs/EARTH_DETECTIVE.md),
-[orchestrator guide](docs/EARTH_DETECTIVE_ORCHESTRATOR.md), [AI prompts](docs/EARTH_DETECTIVE_PROMPTS.md),
-and [documentation guide](docs/EARTH_DETECTIVE_DOCUMENTATION_AI.md).
+Use **Map view** to switch between **Street map**, **3D globe**, and **Google 3D**.
+Street map and 3D globe use OpenStreetMap. Zoom in for streets and local landmarks.
+The 3D globe requires WebGL. All live map views pass the selected coordinates to NASA POWER.
 
-## Quick start
+For Google satellite imagery, enable Maps JavaScript API in a Google Cloud project
+with Maps Platform access. Set `VITE_GOOGLE_MAPS_API_KEY` in `frontend/.env.local`
+for development or in the frontend build environment for deployment, then restart
+Vite or rebuild. The browser receives this key. Apply website restrictions for the
+development and deployment origins and restrict the key to Maps JavaScript API.
+[Google Maps setup](https://developers.google.com/maps/documentation/javascript/get-api-key)
+and [3D Maps](https://developers.google.com/maps/documentation/javascript/3d/overview).
 
-### Backend
+## Reproduce locally
 
-```bash
-cd backend
-python -m venv .venv
-. .venv/bin/activate  # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload
-```
-
-The backend supports Meteomatics and NASA monthly sources. Select **NASA • Ceará
-temperature** in the app for a public NASA POWER series derived from MERRA-2.
-IMERG Final V07, the MERRA-2 archive, and GLDAS Noah v2.1 use the original NASA
-GES DISC files. To enable the archives, add `EARTHDATA_TOKEN` to your private
-`.env.local` and authorize **NASA GESDISC DATA ARCHIVE** in Earthdata Login.
-
-NASA analyses use complete calendar months at the nearest grid cell and accept
-up to 120 months at a time. The six-month projection uses the mean of at least
-three historical values for each corresponding calendar month. When earlier
-months can be held out, the app reports the historical mean absolute error.
-The projection starts after the last available observation. CSV export
-contains the historical series. The API also exposes the five source pages
-scraped with Scrapling at `/api/v1/nasa/sources`.
-
-Running an analysis saves the requested series, statistics, projection and
-provenance to the local SQLite database at `data/earth_detective.sqlite3`.
-Set `ANALYSIS_DB_PATH` in the backend environment to use another location.
-Use **Saved analyses** in the app to reopen a saved result. The API lists
-saved analyses at `GET /api/v1/analyses` and returns the original response
-at `GET /api/v1/analyses/{analysis_id}`.
-
-### Meteomatics connectivity check
-
-The optional script `pipelines/check_meteomatics.py` runs the Meteomatics
-three-day hourly example for the provider's St. Gallen coordinates. It reads
-credentials from the process environment or the ignored root `.env.local` file;
-never put them in source files or commit them.
-
-After filling `.env.local` with a newly issued credential, run this from the
-repository root in PowerShell:
+Tested: Python 3.12.10, Node 24.18.0, npm 11.16.0. System Python 3.14 was not used for the pinned backend dependencies. Use an isolated environment; do not reuse private databases or commit environment files.
 
 ```powershell
-.\backend\.venv\Scripts\python.exe .\pipelines\check_meteomatics.py
-```
-
-This is only a connectivity check; its sample point and forecast window do not
-validate regional data coverage or a historical product suitable for trend
-analysis.
-
-### Run analyses against Meteomatics
-
-The root `.env.local` file is ignored by Git and contains the local settings for
-the Meteomatics source. Fill in `METEOMATICS_USERNAME` and
-`METEOMATICS_PASSWORD` once with a newly issued credential. This file stores
-the password as plain text, so keep the machine account protected and do not
-sync or share the file.
-
-```powershell
-.\backend\.venv\Scripts\python.exe -m uvicorn app.main:app --app-dir backend --env-file .env.local --reload
-```
-
-The backend catalog configures 21 time-series variables across atmosphere,
-soil, radiation, and water balance. Hourly values are aggregated to monthly
-means or totals as appropriate; wind direction uses a circular mean and does
-not receive a linear trend. Click the map to select the query point; otherwise,
-the selected region's approximate center is used. Results are point queries,
-not regional spatial averages; months with insufficient coverage are null.
-Static soil properties are not part of this time-series catalog. Configuring a
-parameter does not confirm account entitlement, historical coverage, licensing,
-or trend methodology.
-
-### Frontend
-
-```bash
+python3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r backend/requirements.txt
 cd frontend
-npm install
-npm run dev
+npm ci
+npm test
+npm run lint
+npm run build
+cd ..
+$env:PYTHONPATH = 'backend'
+$env:ANALYSIS_DB_PATH = Join-Path (Get-Location) 'local-analyses.sqlite3'
+.\.venv\Scripts\python.exe -m uvicorn serve:app --host 127.0.0.1 --port 8000 --no-server-header
 ```
 
-## Current status
+If `python3.12` is not an installed command, use the absolute path to Python 3.12 or `py -3.12`. On POSIX, activate `.venv/bin/activate`, then run `PYTHONPATH=backend ANALYSIS_DB_PATH=/persistent/path/analyses.sqlite3 uvicorn serve:app --host 127.0.0.1 --port 8000`. `serve.py` requires the frontend build and serves UI/API on one origin. Health: `/health`; API prefix: `/api/v1`.
 
-The backend queries Meteomatics for its configured environmental variables and
-does not include synthetic analysis data. Users can select a point on the map;
-otherwise, analyses use the selected region's approximate center. Product
-history, account access, licensing, regional representativeness, and statistical
-methodology still require validation. Only a successful live query confirms
-that a configured variable is accessible for the selected period.
+For frontend development, run the existing backend at `127.0.0.1:8000`, then `npm run dev` in `frontend/`; Vite proxies `/api`. Keep the development server private.
 
-## Notes
+## Tests and evidence
 
-The project follows the English-language internationalization requirement and keeps the core product centered on evidence-based environmental analysis rather than unsupported claims.
+```powershell
+$env:PYTHONPATH = 'backend'
+.\.venv\Scripts\python.exe -m pytest tests -q
+cd frontend
+npm ci
+npm test
+npm run lint
+npm run build
+npx playwright install chromium
+npm run test:e2e
+```
+
+On a machine with Edge, `$env:PLAYWRIGHT_CHANNEL = 'msedge'` uses the installed browser. E2E intercepts API responses with **TEST FIXTURE — not real data**. These deterministic tests do not validate NASA access or public persistence. The optional `node tests/e2e/live-baseline.mjs` explicitly queries a running local server at port 8910; it is separate from CI. [Evidence](docs/entrega/A/) records the actual revision and scope. The Quality workflow runs backend tests, frontend tests/lint/build and deterministic browser tests; a local pass does not mean hosted CI passed.
+
+## Sources and access
+
+NASA POWER provides public monthly temperature derived from MERRA-2. The other NASA archive entries (IMERG, MERRA-2 archive and GLDAS) require successful Earthdata/GES DISC authorization. Meteomatics requires account entitlements for its configured products. Environment variable names are `EARTHDATA_TOKEN`, `METEOMATICS_USERNAME`, `METEOMATICS_PASSWORD`, optional `METEOMATICS_MODEL`, and `ANALYSIS_DB_PATH`; keep their values server-side. A configured catalog entry or present token does not prove a successful query. The UI displays API availability and error reasons.
+
+The challenge Resources list was inspected. POWER is not directly named there; resource-list compliance remains pending documented evidence or organizer clarification. Do not infer eligibility from the NASA name alone. [Portal verification](docs/entrega/A/ED01-portal.md).
+
+## Operation, credits and limitations
+
+Use a persistent volume for SQLite, a single application instance and HTTPS on a publicly authorized host. [Operation and publication](docs/frente-a/PUBLICACAO.md) records the prepared container route, recovery steps and unverified items. Vercel's existing frontend config alone does not host the Python API or preserve SQLite history.
+
+[Credits and AI disclosure](docs/frente-a/CREDITOS-E-IA.md) records observed assets and dependencies. The project owner must confirm the project license and full authorship disclosures. [Earlier timeline](docs/CRONOGRAMA_DO_PROJETO_PT_BR.md) is historical. Backend/scientific acceptance awaits the identified delivery from Front B; no p-value alone establishes environmental inference validity.

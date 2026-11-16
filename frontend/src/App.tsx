@@ -11,7 +11,9 @@ import LazyMap from './components/LazyMap';
 import ResultPanel from './components/ResultPanel';
 import ResultSheet from './components/ResultSheet';
 import { CatalogLoadingState, ErrorState, LoadingState, ReadyState, UnavailableState } from './components/StateViews';
-import { DEFAULT_FILTERS, useAnalysis, type AnalysisStatus } from './hooks/useAnalysis';
+import {
+  DEFAULT_FILTERS, PUBLIC_TEMPERATURE_ID, WORLD_REGION_ID, useAnalysis, type AnalysisStatus,
+} from './hooks/useAnalysis';
 import { useCatalog } from './hooks/useCatalog';
 import { COMPACT_QUERY, useMediaQuery } from './hooks/useMediaQuery';
 import { formatCoordinatePair, formatPeriodShort } from './lib/format';
@@ -30,18 +32,19 @@ function App() {
   const { variables, regions } = catalog;
   const [availability, setAvailability] = useState<AvailabilityResponse | null>(null);
   const [availabilityState, setAvailabilityState] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [availabilityError, setAvailabilityError] = useState('');
   const compact = useMediaQuery(COMPACT_QUERY);
   const [sheetExpanded, setSheetExpanded] = useState(true);
 
   const defaults = useMemo(
     () => ({
       ...DEFAULT_FILTERS,
-      variableId: variables.some((item) => item.id === DEFAULT_FILTERS.variableId)
-        ? DEFAULT_FILTERS.variableId
-        : (variables[0]?.id ?? DEFAULT_FILTERS.variableId),
-      regionId: regions.some((item) => item.id === DEFAULT_FILTERS.regionId)
-        ? DEFAULT_FILTERS.regionId
-        : (regions[0]?.id ?? DEFAULT_FILTERS.regionId),
+      variableId: !variables.length || variables.some((item) => item.id === PUBLIC_TEMPERATURE_ID)
+        ? PUBLIC_TEMPERATURE_ID
+        : (variables.find((item) => item.id === DEFAULT_FILTERS.variableId)?.id ?? variables[0].id),
+      regionId: !regions.length || regions.some((item) => item.id === WORLD_REGION_ID)
+        ? WORLD_REGION_ID
+        : (regions.find((item) => item.id === DEFAULT_FILTERS.regionId)?.id ?? regions[0].id),
     }),
     [variables, regions],
   );
@@ -73,35 +76,41 @@ function App() {
       ...current,
       variableId: variables.some((item) => item.id === current.variableId)
         ? current.variableId
-        : variables[0].id,
+        : defaults.variableId,
       regionId:
         regions.some((item) => item.id === current.regionId) || !regions[0]
           ? current.regionId
-          : regions[0].id,
+          : defaults.regionId,
     }));
-  }, [catalog.status, variables, regions, updateFilters]);
+  }, [catalog.status, variables, regions, defaults, updateFilters]);
+
+  const activeVariable = variables.find((item) => item.id === filters.variableId);
+  const activeRegion = regions.find((item) => item.id === filters.regionId);
+  const availabilityVariableId = activeVariable?.id;
+  const availabilityRegionId = activeRegion?.id;
 
   useEffect(() => {
+    if (!availabilityVariableId || !availabilityRegionId) return;
     const controller = new AbortController();
     setAvailability(null);
     setAvailabilityState('loading');
+    setAvailabilityError('');
 
-    fetchAvailability(filters.variableId, filters.regionId, controller.signal)
+    fetchAvailability(availabilityVariableId, availabilityRegionId, controller.signal)
       .then((result) => {
         if (controller.signal.aborted) return;
         setAvailability(result);
         setAvailabilityState('ready');
       })
-      .catch(() => {
+      .catch((failure: unknown) => {
         if (controller.signal.aborted) return;
+        setAvailabilityError(failure instanceof Error ? failure.message : 'The availability request failed.');
         setAvailabilityState('error');
       });
 
     return () => controller.abort();
-  }, [filters.variableId, filters.regionId]);
+  }, [availabilityVariableId, availabilityRegionId]);
 
-  const activeVariable = variables.find((item) => item.id === filters.variableId);
-  const activeRegion = regions.find((item) => item.id === filters.regionId);
   const resultVariable = variables.find((item) => item.id === analysis?.variable_id);
   const resultRegion = regions.find((item) => item.id === analysis?.region_id);
 
@@ -111,17 +120,17 @@ function App() {
       : null;
   const unavailable = selectedAvailability?.available === false;
 
-  const regionCenter: GeoJSONPoint | null = activeRegion
+  const regionCenter: GeoJSONPoint | null = activeRegion?.center
     ? { type: 'Point', coordinates: [activeRegion.center.longitude, activeRegion.center.latitude] }
     : null;
   const point = filters.point ?? regionCenter;
-  const pointIsRegionCenter =
-    !filters.point ||
-    (regionCenter !== null &&
-      filters.point.coordinates[0] === regionCenter.coordinates[0] &&
-      filters.point.coordinates[1] === regionCenter.coordinates[1]);
+  const pointIsRegionCenter = regionCenter !== null &&
+    (!filters.point || (filters.point.coordinates[0] === regionCenter.coordinates[0] &&
+      filters.point.coordinates[1] === regionCenter.coordinates[1]));
 
-  const runDisabled = catalog.status !== 'ready' || availabilityState === 'loading' || unavailable;
+  const needsPoint = activeRegion?.center === null && !point;
+  const runDisabled =
+    catalog.status !== 'ready' || availabilityState === 'loading' || status === 'loading' || unavailable || !point;
   const handleRun = () => {
     setSheetExpanded(true);
     run();
@@ -161,32 +170,35 @@ function App() {
         kind={resultKind}
         stale={status === 'stale'}
         variableName={resultVariable?.name ?? analysis.variable_id}
-        regionName={resultRegion?.name}
+        regionName={resultRegion?.center ? resultRegion.name : undefined}
         circular={resultVariable?.circular ?? false}
         onExport={() => exportAnalysisCsv(analysis)}
       />
     );
   } else {
     resultView = (
-      <ReadyState selection={selectionText}>
-        {unavailable ? (
-          <UnavailableState message={selectedAvailability?.warning ?? 'The backend reports no data for this selection.'} />
-        ) : selectedAvailability?.warning ? (
-          <p className="ready-note">{selectedAvailability.warning}</p>
-        ) : null}
-        {availabilityState === 'error' ? (
-          <p className="ready-note" role="status">
-            Coverage could not be checked. You can still run the analysis.
-          </p>
-        ) : null}
+      <ReadyState selection={selectionText} needsPoint={needsPoint}>
         {message ? (
           <p className="ready-note" role="status">
             {message}
           </p>
         ) : null}
+        {variables.some((item) => item.id === 'nasa_power_temperature') && regions.some((item) => item.id === 'ceara') ? (
+          <div className="ready-note">
+            <p>Start with temperature at one NASA POWER grid cell near 5.20° S, 39.50° W, January 2020–December 2023. This is a short record at one location.</p>
+            <button type="button" className="button" onClick={() => updateFilters(() => ({
+              variableId: 'nasa_power_temperature', regionId: 'ceara',
+              point: { type: 'Point', coordinates: [-39.5, -5.2] },
+              startDate: '2020-01-01', endDate: '2023-12-31',
+            }), 'NASA POWER case selected. Run analysis to request observations; no result has been assumed.')}>
+              Use NASA POWER case · 2020–2023
+            </button>
+          </div>
+        ) : null}
         <button type="button" className="button" onClick={() => reset()}>
           Reset
         </button>
+        <p className="ready-note"><a href="/credits.html" target="_blank" rel="noreferrer">Credits and AI use</a></p>
       </ReadyState>
     );
   }
@@ -267,6 +279,16 @@ function App() {
             ) : undefined
           }
         >
+          {catalog.status === 'ready' && unavailable ? (
+            <UnavailableState message={selectedAvailability?.warning ?? 'The backend reports no data for this selection.'} />
+          ) : catalog.status === 'ready' && selectedAvailability?.warning ? (
+            <p className="ready-note">{selectedAvailability.warning}</p>
+          ) : null}
+          {catalog.status === 'ready' && availabilityState === 'error' && !needsPoint ? (
+            <p className="ready-note" role="status">
+              Coverage could not be checked: {availabilityError} You can still attempt the analysis.
+            </p>
+          ) : null}
           {resultView}
         </ResultSheet>
       }

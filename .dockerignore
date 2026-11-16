@@ -1,0 +1,13 @@
+.git
+**/node_modules
+**/.venv*
+**/__pycache__
+**/.pytest_cache
+**/.env
+**/.env.*
+frontend/dist
+frontend/dist-snapshot
+docs
+tests
+data/*.sqlite3*
+*.log

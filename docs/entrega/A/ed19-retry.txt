@@ -1,0 +1,1523 @@
+
+> earth-detective-frontend@0.1.0 test
+> vitest run src/App.saved.test.tsx -t retries opening the same saved id
+
+
+ RUN  v2.1.9 C:/Users/adson/.codex/worktrees/earth-delivery-a/earth-detective/frontend
+
+ ❯ src/App.saved.test.tsx (7 tests | 1 failed | 6 skipped) 1799ms
+   × Saved analyses list > retries opening the same saved id without creating a new analysis 1794ms
+     → Unable to find role="heading" and name "Air temperature (TEST FIXTURE) at the selected point"
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"app-shell"[39m
+    [36m>[39m
+      [36m<a[39m
+        [33mclass[39m=[32m"skip-link"[39m
+        [33mhref[39m=[32m"#result"[39m
+      [36m>[39m
+        [0mSkip to the result[0m
+      [36m</a>[39m
+      [36m<main[39m
+        [33mclass[39m=[32m"stage"[39m
+      [36m>[39m
+        [36m<section[39m
+          [33maria-label[39m=[32m"Map and choices"[39m
+          [33mclass[39m=[32m"map-stage"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"map-layer"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0mPick map point[0m
+            [36m</button>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"floating-controls"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"controls-bar"[39m
+            [36m>[39m
+              [36m<h1[39m
+                [33mclass[39m=[32m"brand"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mfocusable[39m=[32m"false"[39m
+                  [33mheight[39m=[32m"20"[39m
+                  [33mviewBox[39m=[32m"0 0 20 20"[39m
+                  [33mwidth[39m=[32m"20"[39m
+                [36m>[39m
+                  [36m<circle[39m
+                    [33mcx[39m=[32m"10"[39m
+                    [33mcy[39m=[32m"10"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mr[39m=[32m"8"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M2 10h16M10 2c-4 4-4 12 0 16M10 2c4 4 4 12 0 16"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-width[39m=[32m"1.4"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [0m Earth Detective[0m
+              [36m</h1>[39m
+              [36m<div[39m
+                [33maria-label[39m=[32m"Choose what to explore"[39m
+                [33mclass[39m=[32m"chips"[39m
+                [33mrole[39m=[32m"group"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"chip-wrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-expanded[39m=[32m"false"[39m
+                    [33maria-haspopup[39m=[32m"dialog"[39m
+                    [33maria-label[39m=[32m"Variable: Air temperature (TEST FIXTURE)"[39m
+                    [33mclass[39m=[32m"chip"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [36m<span[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"chip-label"[39m
+                    [36m>[39m
+                      [0mVariable[0m
+                    [36m</span>[39m
+                    [36m<span[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"chip-value"[39m
+                    [36m>[39m
+                      [0mAir temperature (TEST FIXTURE)[0m
+                    [36m</span>[39m
+                    [36m<svg[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mfocusable[39m=[32m"false"[39m
+                      [33mheight[39m=[32m"8"[39m
+                      [33mviewBox[39m=[32m"0 0 12 8"[39m
+                      [33mwidth[39m=[32m"12"[39m
+                    [36m>[39m
+                      [36m<path[39m
+                        [33md[39m=[32m"M1 1l5 5 5-5"[39m
+                        [33mfill[39m=[32m"none"[39m
+                        [33mstroke[39m=[32m"currentColor"[39m
+                        [33mstroke-width[39m=[32m"2"[39m
+                      [36m/>[39m
+                    [36m</svg>[39m
+                  [36m</button>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"chip-wrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-expanded[39m=[32m"false"[39m
+                    [33maria-haspopup[39m=[32m"dialog"[39m
+                    [33maria-label[39m=[32m"Region: Ceará (TEST FIXTURE)"[39m
+                    [33mclass[39m=[32m"chip"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [36m<span[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"chip-label"[39m
+                    [36m>[39m
+                      [0mRegion[0m
+                    [36m</span>[39m
+                    [36m<span[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"chip-value"[39m
+                    [36m>[39m
+                      [0mCeará (TEST FIXTURE)[0m
+                    [36m</span>[39m
+                    [36m<svg[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mfocusable[39m=[32m"false"[39m
+                      [33mheight[39m=[32m"8"[39m
+                      [33mviewBox[39m=[32m"0 0 12 8"[39m
+                      [33mwidth[39m=[32m"12"[39m
+                    [36m>[39m
+                      [36m<path[39m
+                        [33md[39m=[32m"M1 1l5 5 5-5"[39m
+                        [33mfill[39m=[32m"none"[39m
+                        [33mstroke[39m=[32m"currentColor"[39m
+                        [33mstroke-width[39m=[32m"2"[39m
+                      [36m/>[39m
+                    [36m</svg>[39m
+                  [36m</button>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"chip-wrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-expanded[39m=[32m"false"[39m
+                    [33maria-haspopup[39m=[32m"dialog"[39m
+                    [33maria-label[39m=[32m"Period: 2015–2023"[39m
+                    [33mclass[39m=[32m"chip"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [36m<span[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"chip-label"[39m
+                    [36m>[39m
+                      [0mPeriod[0m
+                    [36m</span>[39m
+                    [36m<span[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"chip-value"[39m
+                    [36m>[39m
+                      [0m2015–2023[0m
+                    [36m</span>[39m
+                    [36m<svg[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mfocusable[39m=[32m"false"[39m
+                      [33mheight[39m=[32m"8"[39m
+                      [33mviewBox[39m=[32m"0 0 12 8"[39m
+                      [33mwidth[39m=[32m"12"[39m
+                    [36m>[39m
+                      [36m<path[39m
+                        [33md[39m=[32m"M1 1l5 5 5-5"[39m
+                        [33mfill[39m=[32m"none"[39m
+                        [33mstroke[39m=[32m"currentColor"[39m
+                        [33mstroke-width[39m=[32m"2"[39m
+                      [36m/>[39m
+                    [36m</svg>[39m
+                  [36m</button>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"chip-wrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-expanded[39m=[32m"false"[39m
+                    [33maria-haspopup[39m=[32m"dialog"[39m
+                    [33maria-label[39m=[32m"Point: 5.00° S, 39.00° W"[39m
+                    [33mclass[39m=[32m"chip"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [36m<span[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"chip-label"[39m
+                    [36m>[39m
+                      [0mPoint[0m
+                    [36m</span>[39m
+                    [36m<span[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"chip-value"[39m
+                    [36m>[39m
+                      [0m5.00° S, 39.00° W[0m
+                    [36m</span>[39m
+                    [36m<svg[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mfocusable[39m=[32m"false"[39m
+                      [33mheight[39m=[32m"8"[39m
+                      [33mviewBox[39m=[32m"0 0 12 8"[39m
+                      [33mwidth[39m=[32m"12"[39m
+                    [36m>[39m
+                      [36m<path[39m
+                        [33md[39m=[32m"M1 1l5 5 5-5"[39m
+                        [33mfill[39m=[32m"none"[39m
+                        [33mstroke[39m=[32m"currentColor"[39m
+                        [33mstroke-width[39m=[32m"2"[39m
+                      [36m/>[39m
+                    [36m</svg>[39m
+                  [36m</button>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"chip-wrap--saved"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"chip-wrap"[39m
+                  [36m>[39m
+                    [36m<button[39m
+                      [33maria-expanded[39m=[32m"false"[39m
+                      [33maria-haspopup[39m=[32m"dialog"[39m
+                      [33maria-label[39m=[32m"Results: Saved analyses"[39m
+                      [33mclass[39m=[32m"chip"[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [36m<span[39m
+                        [33maria-hidden[39m=[32m"true"[39m
+                        [33mclass[39m=[32m"chip-label"[39m
+                      [36m>[39m
+                        [0mResults[0m
+                      [36m</span>[39m
+                      [36m<span[39m
+                        [33maria-hidden[39m=[32m"true"[39m
+                        [33mclass[39m=[32m"chip-value"[39m
+                      [36m>[39m
+                        [0mSaved analyses[0m
+                      [36m</span>[39m
+                      [36m<svg[39m
+                        [33maria-hidden[39m=[32m"true"[39m
+                        [33mfocusable[39m=[32m"false"[39m
+                        [33mheight[39m=[32m"8"[39m
+                        [33mviewBox[39m=[32m"0 0 12 8"[39m
+                        [33mwidth[39m=[32m"12"[39m
+                      [36m>[39m
+                        [36m<path[39m
+                          [33md[39m=[32m"M1 1l5 5 5-5"[39m
+                          [33mfill[39m=[32m"none"[39m
+                          [33mstroke[39m=[32m"currentColor"[39m
+                          [33mstroke-width[39m=[32m"2"[39m
+                        [36m/>[39m
+                      [36m</svg>[39m
+                    [36m</button>[39m
+                  [36m</div>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"run-button"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [0mRun analysis[0m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"map-footer"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33maria-live[39m=[32m"polite"[39m
+              [33mclass[39m=[32m"point-readout"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mRegion center[0m
+                [0m: [0m
+                [0m5.00° S, 39.00° W[0m
+              [36m</strong>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"point-readout-help"[39m
+              [36m>[39m
+                [0mOne point, not an area average. Click the map or use the Point menu to move it.[0m
+              [36m</span>[39m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</section>[39m
+        [36m<aside[39m
+          [33maria-label[39m=[32m"Result"[39m
+          [33mclass[39m=[32m"result-sheet"[39m
+          [33mid[39m=[32m"result"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"result-scroll"[39m
+            [33mid[39m=[32m"result-body"[39m
+          [36m>[39m
+            [36m<section[39m
+              [33mclass[39m=[32m"notice notice--error"[39m
+              [33mrole[39m=[32m"alert"[39m
+            [36m>[39m
+              [36m<h2[39m
+                [33mclass[39m=[32m"notice-title"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mfocusable[39m=[32m"false"[39m
+                  [33mheight[39m=[32m"14"[39m
+                  [33mviewBox[39m=[32m"0 0 14 14"[39m
+                  [33mwidth[39m=[32m"14"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M2.5 2.5l9 9M11.5 2.5l-9 9"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-width[39m=[32m"2.2"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [0m [0m
+                [0mWe could not get the data[0m
+              [36m</h2>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"notice-body"[39m
+              [36m>[39m
+                [36m<p>[39m
+                  [36m<strong>[39m
+                    [0mWhat happened:[0m
+                  [36m</strong>[39m
+                  [0m [0m
+                  [0mThe data service is not available right now. It may be starting up or not set up yet.[0m
+                [36m</p>[39m
+                [36m<p>[39m
+                  [36m<strong>[39m
+                    [0mWhat you can do:[0m
+                  [36m</strong>[39m
+                  [0m [0m
+                  [0mTry again in a moment. If it keeps happening, tell the project team.[0m
+                [36m</p>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"service-message"[39m
+                [36m>[39m
+                  [0mMessage from the service: [0m
+                  [36m<span>[39m
+                    [0mTemporary saved-analysis failure[0m
+                  [36m</span>[39m
+                [36m</p>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"notice-actions"[39m
+              [36m>[39m
+                [36m<button[39m
+                  [33mclass[39m=[32m"button button--primary"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [0mTry again[0m
+                [36m</button>[39m
+              [36m</div>[39m
+            [36m</section>[39m
+          [36m</div>[39m
+        [36m</aside>[39m
+      [36m</main>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"app-shell"[39m
+    [36m>[39m
+      [36m<a[39m
+        [33mclass[39m=[32m"skip-link"[39m
+        [33mhref[39m=[32m"#result"[39m
+      [36m>[39m
+        [0mSkip to the result[0m
+      [36m</a>[39m
+      [36m<main[39m
+        [33mclass[39m=[32m"stage"[39m
+      [36m>[39m
+        [36m<section[39m
+          [33maria-label[39m=[32m"Map and choices"[39m
+          [33mclass[39m=[32m"map-stage"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"map-layer"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0mPick map point[0m
+            [36m</button>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"floating-controls"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"controls-bar"[39m
+            [36m>[39m
+              [36m<h1[39m
+                [33mclass[39m=[32m"brand"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mfocusable[39m=[32m"false"[39m
+                  [33mheight[39m=[32m"20"[39m
+                  [33mviewBox[39m=[32m"0 0 20 20"[39m
+                  [33mwidth[39m=[32m"20"[39m
+                [36m>[39m
+                  [36m<circle[39m
+                    [33mcx[39m=[32m"10"[39m
+                    [33mcy[39m=[32m"10"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mr[39m=[32m"8"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M2 10h16M10 2c-4 4-4 12 0 16M10 2c4 4 4 12 0 16"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-width[39m=[32m"1.4"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [0m Earth Detective[0m
+              [36m</h1>[39m
+              [36m<div[39m
+                [33maria-label[39m=[32m"Choose what to explore"[39m
+                [33mclass[39m=[32m"chips"[39m
+                [33mrole[39m=[32m"group"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"chip-wrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-expanded[39m=[32m"false"[39m
+                    [33maria-haspopup[39m=[32m"dialog"[39m
+                    [33maria-label[39m=[32m"Variable: Air temperature (TEST FIXTURE)"[39m
+                    [33mclass[39m=[32m"chip"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [36m<span[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"chip-label"[39m
+                    [36m>[39m
+                      [0mVariable[0m
+                    [36m</span>[39m
+                    [36m<span[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"chip-value"[39m
+                    [36m>[39m
+                      [0mAir temperature (TEST FIXTURE)[0m
+                    [36m</span>[39m
+                    [36m<svg[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mfocusable[39m=[32m"false"[39m
+                      [33mheight[39m=[32m"8"[39m
+                      [33mviewBox[39m=[32m"0 0 12 8"[39m
+                      [33mwidth[39m=[32m"12"[39m
+                    [36m>[39m
+                      [36m<path[39m
+                        [33md[39m=[32m"M1 1l5 5 5-5"[39m
+                        [33mfill[39m=[32m"none"[39m
+                        [33mstroke[39m=[32m"currentColor"[39m
+                        [33mstroke-width[39m=[32m"2"[39m
+                      [36m/>[39m
+                    [36m</svg>[39m
+                  [36m</button>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"chip-wrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-expanded[39m=[32m"false"[39m
+                    [33maria-haspopup[39m=[32m"dialog"[39m
+                    [33maria-label[39m=[32m"Region: Ceará (TEST FIXTURE)"[39m
+                    [33mclass[39m=[32m"chip"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [36m<span[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"chip-label"[39m
+                    [36m>[39m
+                      [0mRegion[0m
+                    [36m</span>[39m
+                    [36m<span[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"chip-value"[39m
+                    [36m>[39m
+                      [0mCeará (TEST FIXTURE)[0m
+                    [36m</span>[39m
+                    [36m<svg[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mfocusable[39m=[32m"false"[39m
+                      [33mheight[39m=[32m"8"[39m
+                      [33mviewBox[39m=[32m"0 0 12 8"[39m
+                      [33mwidth[39m=[32m"12"[39m
+                    [36m>[39m
+                      [36m<path[39m
+                        [33md[39m=[32m"M1 1l5 5 5-5"[39m
+                        [33mfill[39m=[32m"none"[39m
+                        [33mstroke[39m=[32m"currentColor"[39m
+                        [33mstroke-width[39m=[32m"2"[39m
+                      [36m/>[39m
+                    [36m</svg>[39m
+                  [36m</button>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"chip-wrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-expanded[39m=[32m"false"[39m
+                    [33maria-haspopup[39m=[32m"dialog"[39m
+                    [33maria-label[39m=[32m"Period: 2015–2023"[39m
+                    [33mclass[39m=[32m"chip"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [36m<span[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"chip-label"[39m
+                    [36m>[39m
+                      [0mPeriod[0m
+                    [36m</span>[39m
+                    [36m<span[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"chip-value"[39m
+                    [36m>[39m
+                      [0m2015–2023[0m
+                    [36m</span>[39m
+                    [36m<svg[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mfocusable[39m=[32m"false"[39m
+                      [33mheight[39m=[32m"8"[39m
+                      [33mviewBox[39m=[32m"0 0 12 8"[39m
+                      [33mwidth[39m=[32m"12"[39m
+                    [36m>[39m
+                      [36m<path[39m
+                        [33md[39m=[32m"M1 1l5 5 5-5"[39m
+                        [33mfill[39m=[32m"none"[39m
+                        [33mstroke[39m=[32m"currentColor"[39m
+                        [33mstroke-width[39m=[32m"2"[39m
+                      [36m/>[39m
+                    [36m</svg>[39m
+                  [36m</button>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"chip-wrap"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-expanded[39m=[32m"false"[39m
+                    [33maria-haspopup[39m=[32m"dialog"[39m
+                    [33maria-label[39m=[32m"Point: 5.00° S, 39.00° W"[39m
+                    [33mclass[39m=[32m"chip"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [36m<span[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"chip-label"[39m
+                    [36m>[39m
+                      [0mPoint[0m
+                    [36m</span>[39m
+                    [36m<span[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"chip-value"[39m
+                    [36m>[39m
+                      [0m5.00° S, 39.00° W[0m
+                    [36m</span>[39m
+                    [36m<svg[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mfocusable[39m=[32m"false"[39m
+                      [33mheight[39m=[32m"8"[39m
+                      [33mviewBox[39m=[32m"0 0 12 8"[39m
+                      [33mwidth[39m=[32m"12"[39m
+                    [36m>[39m
+                      [36m<path[39m
+                        [33md[39m=[32m"M1 1l5 5 5-5"[39m
+                        [33mfill[39m=[32m"none"[39m
+                        [33mstroke[39m=[32m"currentColor"[39m
+                        [33mstroke-width[39m=[32m"2"[39m
+                      [36m/>[39m
+                    [36m</svg>[39m
+                  [36m</button>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"chip-wrap--saved"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"chip-wrap"[39m
+                  [36m>[39m
+                    [36m<button[39m
+                      [33maria-expanded[39m=[32m"false"[39m
+                      [33maria-haspopup[39m=[32m"dialog"[39m
+                      [33maria-label[39m=[32m"Results: Saved analyses"[39m
+                      [33mclass[39m=[32m"chip"[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [36m<span[39m
+                        [33maria-hidden[39m=[32m"true"[39m
+                        [33mclass[39m=[32m"chip-label"[39m
+                      [36m>[39m
+                        [0mResults[0m
+                      [36m</span>[39m
+                      [36m<span[39m
+                        [33maria-hidden[39m=[32m"true"[39m
+                        [33mclass[39m=[32m"chip-value"[39m
+                      [36m>[39m
+                        [0mSaved analyses[0m
+                      [36m</span>[39m
+                      [36m<svg[39m
+                        [33maria-hidden[39m=[32m"true"[39m
+                        [33mfocusable[39m=[32m"false"[39m
+                        [33mheight[39m=[32m"8"[39m
+                        [33mviewBox[39m=[32m"0 0 12 8"[39m
+                        [33mwidth[39m=[32m"12"[39m
+                      [36m>[39m
+                        [36m<path[39m
+                          [33md[39m=[32m"M1 1l5 5 5-5"[39m
+                          [33mfill[39m=[32m"none"[39m
+                          [33mstroke[39m=[32m"currentColor"[39m
+                          [33mstroke-width[39m=[32m"2"[39m
+                        [36m/>[39m
+                      [36m</svg>[39m
+                    [36m</button>[39m
+                  [36m</div>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"run-button"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [0mRun analysis[0m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"map-footer"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33maria-live[39m=[32m"polite"[39m
+              [33mclass[39m=[32m"point-readout"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mRegion center[0m
+                [0m: [0m
+                [0m5.00° S, 39.00° W[0m
+              [36m</strong>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"point-readout-help"[39m
+              [36m>[39m
+                [0mOne point, not an area average. Click the map or use the Point menu to move it.[0m
+              [36m</span>[39m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</section>[39m
+        [36m<aside[39m
+          [33maria-label[39m=[32m"Result"[39m
+          [33mclass[39m=[32m"result-sheet"[39m
+          [33mid[39m=[32m"result"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"result-scroll"[39m
+            [33mid[39m=[32m"result-body"[39m
+          [36m>[39m
+            [36m<section[39m
+              [33mclass[39m=[32m"notice notice--error"[39m
+              [33mrole[39m=[32m"alert"[39m
+            [36m>[39m
+              [36m<h2[39m
+                [33mclass[39m=[32m"notice-title"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mfocusable[39m=[32m"false"[39m
+                  [33mheight[39m=[32m"14"[39m
+                  [33mviewBox[39m=[32m"0 0 14 14"[39m
+                  [33mwidth[39m=[32m"14"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M2.5 2.5l9 9M11.5 2.5l-9 9"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-width[39m=[32m"2.2"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [0m [0m
+                [0mWe could not get the data[0m
+              [36m</h2>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"notice-body"[39m
+              [36m>[39m
+                [36m<p>[39m
+                  [36m<strong>[39m
+                    [0mWhat happened:[0m
+                  [36m</strong>[39m
+                  [0m [0m
+                  [0mThe data service is not available right now. It may be starting up or not set up yet.[0m
+                [36m</p>[39m
+                [36m<p>[39m
+                  [36m<strong>[39m
+                    [0mWhat you can do:[0m
+                  [36m</strong>[39m
+                  [0m [0m
+                  [0mTry again in a moment. If it keeps happening, tell the project team.[0m
+                [36m</p>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"service-message"[39m
+                [36m>[39m
+                  [0mMessage from the service: [0m
+                  [36m<span>[39m
+                    [0mTemporary saved-analysis failure[0m
+                  [36m</span>[39m
+                [36m</p>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"notice-actions"[39m
+              [36m>[39m
+                [36m<button[39m
+                  [33mclass[39m=[32m"button button--primary"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [0mTry again[0m
+                [36m</button>[39m
+              [36m</div>[39m
+            [36m</section>[39m
+          [36m</div>[39m
+        [36m</aside>[39m
+      [36m</main>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/App.saved.test.tsx > Saved analyses list > retries opening the same saved id without creating a new analysis
+TestingLibraryElementError: Unable to find role="heading" and name "Air temperature (TEST FIXTURE) at the selected point"
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="app-shell"
+    >
+      <a
+        class="skip-link"
+        href="#result"
+      >
+        Skip to the result
+      </a>
+      <main
+        class="stage"
+      >
+        <section
+          aria-label="Map and choices"
+          class="map-stage"
+        >
+          <div
+            class="map-layer"
+          >
+            <button
+              type="button"
+            >
+              Pick map point
+            </button>
+          </div>
+          <div
+            class="floating-controls"
+          >
+            <div
+              class="controls-bar"
+            >
+              <h1
+                class="brand"
+              >
+                <svg
+                  aria-hidden="true"
+                  focusable="false"
+                  height="20"
+                  viewBox="0 0 20 20"
+                  width="20"
+                >
+                  <circle
+                    cx="10"
+                    cy="10"
+                    fill="none"
+                    r="8"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
+                  <path
+                    d="M2 10h16M10 2c-4 4-4 12 0 16M10 2c4 4 4 12 0 16"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.4"
+                  />
+                </svg>
+                 Earth Detective
+              </h1>
+              <div
+                aria-label="Choose what to explore"
+                class="chips"
+                role="group"
+              >
+                <div
+                  class="chip-wrap"
+                >
+                  <button
+                    aria-expanded="false"
+                    aria-haspopup="dialog"
+                    aria-label="Variable: Air temperature (TEST FIXTURE)"
+                    class="chip"
+                    type="button"
+                  >
+                    <span
+                      aria-hidden="true"
+                      class="chip-label"
+                    >
+                      Variable
+                    </span>
+                    <span
+                      aria-hidden="true"
+                      class="chip-value"
+                    >
+                      Air temperature (TEST FIXTURE)
+                    </span>
+                    <svg
+                      aria-hidden="true"
+                      focusable="false"
+                      height="8"
+                      viewBox="0 0 12 8"
+                      width="12"
+                    >
+                      <path
+                        d="M1 1l5 5 5-5"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      />
+                    </svg>
+                  </button>
+                </div>
+                <div
+                  class="chip-wrap"
+                >
+                  <button
+                    aria-expanded="false"
+                    aria-haspopup="dialog"
+                    aria-label="Region: Ceará (TEST FIXTURE)"
+                    class="chip"
+                    type="button"
+                  >
+                    <span
+                      aria-hidden="true"
+                      class="chip-label"
+                    >
+                      Region
+                    </span>
+                    <span
+                      aria-hidden="true"
+                      class="chip-value"
+                    >
+                      Ceará (TEST FIXTURE)
+                    </span>
+                    <svg
+                      aria-hidden="true"
+                      focusable="false"
+                      height="8"
+                      viewBox="0 0 12 8"
+                      width="12"
+                    >
+                      <path
+                        d="M1 1l5 5 5-5"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      />
+                    </svg>
+                  </button>
+                </div>
+                <div
+                  class="chip-wrap"
+                >
+                  <button
+                    aria-expanded="false"
+                    aria-haspopup="dialog"
+                    aria-label="Period: 2015–2023"
+                    class="chip"
+                    type="button"
+                  >
+                    <span
+                      aria-hidden="true"
+                      class="chip-label"
+                    >
+                      Period
+                    </span>
+                    <span
+                      aria-hidden="true"
+                      class="chip-value"
+                    >
+                      2015–2023
+                    </span>
+                    <svg
+                      aria-hidden="true"
+                      focusable="false"
+                      height="8"
+                      viewBox="0 0 12 8"
+                      width="12"
+                    >
+                      <path
+                        d="M1 1l5 5 5-5"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      />
+                    </svg>
+                  </button>
+                </div>
+                <div
+                  class="chip-wrap"
+                >
+                  <button
+                    aria-expanded="false"
+                    aria-haspopup="dialog"
+                    aria-label="Point: 5.00° S, 39.00° W"
+                    class="chip"
+                    type="button"
+                  >
+                    <span
+                      aria-hidden="true"
+                      class="chip-label"
+                    >
+                      Point
+                    </span>
+                    <span
+                      aria-hidden="true"
+                      class="chip-value"
+                    >
+                      5.00° S, 39.00° W
+                    </span>
+                    <svg
+                      aria-hidden="true"
+                      focusable="false"
+                      height="8"
+                      viewBox="0 0 12 8"
+                      width="12"
+                    >
+                      <path
+                        d="M1 1l5 5 5-5"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      />
+                    </svg>
+                  </button>
+                </div>
+                <div
+                  class="chip-wrap--saved"
+                >
+                  <div
+                    class="chip-wrap"
+                  >
+                    <button
+                      aria-expanded="false"
+                      aria-haspopup="dialog"
+                      aria-label="Results: Saved analyses"
+                      class="chip"
+                      type="button"
+                    >
+                      <span
+                        aria-hidden="true"
+                        class="chip-label"
+                      >
+                        Results
+                      </span>
+                      <span
+                        aria-hidden="true"
+                        class="chip-value"
+                      >
+                        Saved analyses
+                      </span>
+                      <svg
+                        aria-hidden="true"
+                        focusable="false"
+                        height="8"
+                        viewBox="0 0 12 8"
+                        width="12"
+                      >
+                        <path
+                          d="M1 1l5 5 5-5"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <button
+                class="run-button"
+                type="button"
+              >
+                Run analysis
+              </button>
+            </div>
+          </div>
+          <div
+            class="map-footer"
+          >
+            <p
+              aria-live="polite"
+              class="point-readout"
+            >
+              <strong>
+                Region center
+                :
+                5.00° S, 39.00° W
+              </strong>
+              <span
+                class="point-readout-help"
+              >
+                One point, not an area average. Click the map or use the Point menu to move it.
+              </span>
+            </p>
+          </div>
+        </section>
+        <aside
+          aria-label="Result"
+          class="result-sheet"
+          id="result"
+        >
+          <div
+            class="result-scroll"
+            id="result-body"
+          >
+            <section
+              class="notice notice--error"
+              role="alert"
+            >
+              <h2
+                class="notice-title"
+              >
+                <svg
+                  aria-hidden="true"
+                  focusable="false"
+                  height="14"
+                  viewBox="0 0 14 14"
+                  width="14"
+                >
+                  <path
+                    d="M2.5 2.5l9 9M11.5 2.5l-9 9"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.2"
+                  />
+                </svg>
+
+                We could not get the data
+              </h2>
+              <div
+                class="notice-body"
+              >
+                <p>
+                  <strong>
+                    What happened:
+                  </strong>
+
+                  The data service is not available right now. It may be starting up or not set up yet.
+                </p>
+                <p>
+                  <strong>
+                    What you can do:
+                  </strong>
+
+                  Try again in a moment. If it keeps happening, tell the project team.
+                </p>
+                <p
+                  class="service-message"
+                >
+                  Message from the service:
+                  <span>
+                    Temporary saved-analysis failure
+                  </span>
+                </p>
+              </div>
+              <div
+                class="notice-actions"
+              >
+                <button
+                  class="button button--primary"
+                  type="button"
+                >
+                  Try again
+                </button>
+              </div>
+            </section>
+          </div>
+        </aside>
+      </main>
+    </div>
+  </div>
+</body>
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="app-shell"
+    >
+      <a
+        class="skip-link"
+        href="#result"
+      >
+        Skip to the result
+      </a>
+      <main
+        class="stage"
+      >
+        <section
+          aria-label="Map and choices"
+          class="map-stage"
+        >
+          <div
+            class="map-layer"
+          >
+            <button
+              type="button"
+            >
+              Pick map point
+            </button>
+          </div>
+          <div
+            class="floating-controls"
+          >
+            <div
+              class="controls-bar"
+            >
+              <h1
+                class="brand"
+              >
+                <svg
+                  aria-hidden="true"
+                  focusable="false"
+                  height="20"
+                  viewBox="0 0 20 20"
+                  width="20"
+                >
+                  <circle
+                    cx="10"
+                    cy="10"
+                    fill="none"
+                    r="8"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
+                  <path
+                    d="M2 10h16M10 2c-4 4-4 12 0 16M10 2c4 4 4 12 0 16"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.4"
+                  />
+                </svg>
+                 Earth Detective
+              </h1>
+              <div
+                aria-label="Choose what to explore"
+                class="chips"
+                role="group"
+              >
+                <div
+                  class="chip-wrap"
+                >
+                  <button
+                    aria-expanded="false"
+                    aria-haspopup="dialog"
+                    aria-label="Variable: Air temperature (TEST FIXTURE)"
+                    class="chip"
+                    type="button"
+                  >
+                    <span
+                      aria-hidden="true"
+                      class="chip-label"
+                    >
+                      Variable
+                    </span>
+                    <span
+                      aria-hidden="true"
+                      class="chip-value"
+                    >
+                      Air temperature (TEST FIXTURE)
+                    </span>
+                    <svg
+                      aria-hidden="true"
+                      focusable="false"
+                      height="8"
+                      viewBox="0 0 12 8"
+                      width="12"
+                    >
+                      <path
+                        d="M1 1l5 5 5-5"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      />
+                    </svg>
+                  </button>
+                </div>
+                <div
+                  class="chip-wrap"
+                >
+                  <button
+                    aria-expanded="false"
+                    aria-haspopup="dialog"
+                    aria-label="Region: Ceará (TEST FIXTURE)"
+                    class="chip"
+                    type="button"
+                  >
+                    <span
+                      aria-hidden="true"
+                      class="chip-label"
+                    >
+                      Region
+                    </span>
+                    <span
+                      aria-hidden="true"
+                      class="chip-value"
+                    >
+                      Ceará (TEST FIXTURE)
+                    </span>
+                    <svg
+                      aria-hidden="true"
+                      focusable="false"
+                      height="8"
+                      viewBox="0 0 12 8"
+                      width="12"
+                    >
+                      <path
+                        d="M1 1l5 5 5-5"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      />
+                    </svg>
+                  </button>
+                </div>
+                <div
+                  class="chip-wrap"
+                >
+                  <button
+                    aria-expanded="false"
+                    aria-haspopup="dialog"
+                    aria-label="Period: 2015–2023"
+                    class="chip"
+                    type="button"
+                  >
+                    <span
+                      aria-hidden="true"
+                      class="chip-label"
+                    >
+                      Period
+                    </span>
+                    <span
+                      aria-hidden="true"
+                      class="chip-value"
+                    >
+                      2015–2023
+                    </span>
+                    <svg
+                      aria-hidden="true"
+                      focusable="false"
+                      height="8"
+                      viewBox="0 0 12 8"
+                      width="12"
+                    >
+                      <path
+                        d="M1 1l5 5 5-5"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      />
+                    </svg>
+                  </button>
+                </div>
+                <div
+                  class="chip-wrap"
+                >
+                  <button
+                    aria-expanded="false"
+                    aria-haspopup="dialog"
+                    aria-label="Point: 5.00° S, 39.00° W"
+                    class="chip"
+                    type="button"
+                  >
+                    <span
+                      aria-hidden="true"
+                      class="chip-label"
+                    >
+                      Point
+                    </span>
+                    <span
+                      aria-hidden="true"
+                      class="chip-value"
+                    >
+                      5.00° S, 39.00° W
+                    </span>
+                    <svg
+                      aria-hidden="true"
+                      focusable="false"
+                      height="8"
+                      viewBox="0 0 12 8"
+                      width="12"
+                    >
+                      <path
+                        d="M1 1l5 5 5-5"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      />
+                    </svg>
+                  </button>
+                </div>
+                <div
+                  class="chip-wrap--saved"
+                >
+                  <div
+                    class="chip-wrap"
+                  >
+                    <button
+                      aria-expanded="false"
+                      aria-haspopup="dialog"
+                      aria-label="Results: Saved analyses"
+                      class="chip"
+                      type="button"
+                    >
+                      <span
+                        aria-hidden="true"
+                        class="chip-label"
+                      >
+                        Results
+                      </span>
+                      <span
+                        aria-hidden="true"
+                        class="chip-value"
+                      >
+                        Saved analyses
+                      </span>
+                      <svg
+                        aria-hidden="true"
+                        focusable="false"
+                        height="8"
+                        viewBox="0 0 12 8"
+                        width="12"
+                      >
+                        <path
+                          d="M1 1l5 5 5-5"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <button
+                class="run-button"
+                type="button"
+              >
+                Run analysis
+              </button>
+            </div>
+          </div>
+          <div
+            class="map-footer"
+          >
+            <p
+              aria-live="polite"
+              class="point-readout"
+            >
+              <strong>
+                Region center
+                :
+                5.00° S, 39.00° W
+              </strong>
+              <span
+                class="point-readout-help"
+              >
+                One point, not an area average. Click the map or use the Point menu to move it.
+              </span>
+            </p>
+          </div>
+        </section>
+        <aside
+          aria-label="Result"
+          class="result-sheet"
+          id="result"
+        >
+          <div
+            class="result-scroll"
+            id="result-body"
+          >
+            <section
+              class="notice notice--error"
+              role="alert"
+            >
+              <h2
+                class="notice-title"
+              >
+                <svg
+                  aria-hidden="true"
+                  focusable="false"
+                  height="14"
+                  viewBox="0 0 14 14"
+                  width="14"
+                >
+                  <path
+                    d="M2.5 2.5l9 9M11.5 2.5l-9 9"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.2"
+                  />
+                </svg>
+
+                We could not get the data
+              </h2>
+              <div
+                class="notice-body"
+              >
+                <p>
+                  <strong>
+                    What happened:
+                  </strong>
+
+                  The data service is not available right now. It may be starting up or not set up yet.
+                </p>
+                <p>
+                  <strong>
+                    What you can do:
+                  </strong>
+
+                  Try again in a moment. If it keeps happening, tell the project team.
+                </p>
+                <p
+                  class="service-message"
+                >
+                  Message from the service:
+                  <span>
+                    Temporary saved-analysis failure
+                  </span>
+                </p>
+              </div>
+              <div
+                class="notice-actions"
+              >
+                <button
+                  class="button button--primary"
+                  type="button"
+                >
+                  Try again
+                </button>
+              </div>
+            </section>
+          </div>
+        </aside>
+      </main>
+    </div>
+  </div>
+</body>
+ ❯ waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/App.saved.test.tsx:159:25
+    157|     await user.click(within(alert).getByRole('button', { name: 'Try ag…
+    158|
+    159|     expect(await screen.findByRole('heading', { name: 'Air temperature…
+       |                         ^
+    160|     expect(opened).toEqual(['saved-1', 'saved-1']);
+    161|     expect(created).not.toHaveBeenCalled();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 skipped (7)
+   Start at  16:56:56
+   Duration  15.03s (transform 738ms, setup 1.21s, collect 1.77s, tests 1.80s, environment 7.88s, prepare 838ms)
+
+
+GREEN targeted exit: 0
+
+> earth-detective-frontend@0.1.0 test
+> vitest run src/hooks/useAnalysis.test.ts src/App.saved.test.tsx
+
+
+ RUN  v2.1.9 C:/Users/adson/.codex/worktrees/earth-delivery-a/earth-detective/frontend
+
+ ✓ src/hooks/useAnalysis.test.ts (16 tests) 1661ms
+ ✓ src/App.saved.test.tsx (7 tests) 2061ms
+   ✓ Saved analyses list > shows a loading state, then the saved results with names and period 379ms
+   ✓ Saved analyses list > retries opening the same saved id without creating a new analysis 405ms
+   ✓ Download CSV > uses the export endpoint of the analysis id 375ms
+
+ Test Files  2 passed (2)
+      Tests  23 passed (23)
+   Start at  16:58:09
+   Duration  18.99s (transform 1.03s, setup 3.44s, collect 2.62s, tests 3.72s, environment 18.24s, prepare 2.73s)
+
+
+Targeted ESLint exit: 0
+Command: npx eslint src/hooks/useAnalysis.ts src/hooks/useAnalysis.test.ts src/App.saved.test.tsx
+Base HEAD: 09b49c31242f2c8c6cb732cb58cf05ff564749d4; changes uncommitted.
+RED command: npm test -- src/App.saved.test.tsx -t 'retries opening the same saved id'
+GREEN command: npm test -- src/hooks/useAnalysis.test.ts src/App.saved.test.tsx
+All data in these tests are TEST FIXTURE, not NASA results.

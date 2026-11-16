@@ -1,0 +1,33 @@
+{
+  "revision": "a2fa80e39b9468eeb5d7b7db2cb859db1ca86a98",
+  "scope": "Frontend A before B merge; uncommitted operation/docs recorded separately",
+  "frontend": {
+    "tests": 184,
+    "files": 22,
+    "lint_exit": 0,
+    "build_exit": 0
+  },
+  "deterministic_browser": {
+    "tests": 4,
+    "desktop": "1440x960",
+    "mobile": "390x844",
+    "fixtures_only": true,
+    "log": "e2e-current.log"
+  },
+  "baseline_backend": {
+    "sha": "09b49c31242f2c8c6cb732cb58cf05ff564749d4",
+    "tests": 30
+  },
+  "backend_increment": {
+    "sha": "8b995ac2b01d929509d6aadbe7b89d221c2bdcef",
+    "tests": 33,
+    "isolated_snapshot": true,
+    "not_integrated_yet": true,
+    "missing": "docs/backend/ENTREGA-B.md"
+  },
+  "docker_baseline_image": "sha256:0e3dc83cdc535ca889371866a161e2f8696f6e33b47ff0081bb995626c7b0b75",
+  "docker_scope": "intermediate source at first build, not final integrated candidate",
+  "live_baseline": "live-browser-summary.json",
+  "public_deployment": false,
+  "official_submission": false
+}

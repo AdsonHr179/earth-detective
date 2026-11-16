@@ -1,0 +1,768 @@
+{
+  "analysis_id": "27fdacf2-c252-4fd5-a66c-409a028223f8",
+  "schema_version": "1.0",
+  "dataset_version": "nasa-power-monthly",
+  "method_version": "nasa-monthly-v1",
+  "variable_id": "nasa_power_temperature",
+  "region_id": "ceara",
+  "requested_period": {
+    "start_date": "2020-01-01",
+    "end_date": "2023-12-31"
+  },
+  "effective_period": {
+    "start_date": "2020-01-01",
+    "end_date": "2023-12-31"
+  },
+  "source": "NASA POWER / MERRA-2",
+  "product": "NASA POWER \u00b7 Air temperature at 2 m",
+  "source_url": "https://power.larc.nasa.gov/docs/services/api/temporal/monthly/",
+  "retrieved_at": "2026-11-15T20:12:26.046818+00:00",
+  "region_version": "selected-point-v1",
+  "spatial_query": {
+    "type": "Point",
+    "coordinates": [
+      -39.5,
+      -5.2
+    ]
+  },
+  "series": [
+    {
+      "timestamp": "2020-01-01",
+      "value": 27.96,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2020-02-01",
+      "value": 26.66,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2020-03-01",
+      "value": 25.85,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2020-04-01",
+      "value": 25.31,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2020-05-01",
+      "value": 25.33,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2020-06-01",
+      "value": 25.76,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2020-07-01",
+      "value": 25.91,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2020-08-01",
+      "value": 28.09,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2020-09-01",
+      "value": 28.76,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2020-10-01",
+      "value": 29.59,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2020-11-01",
+      "value": 29.41,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2020-12-01",
+      "value": 29.36,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2021-01-01",
+      "value": 28.29,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2021-02-01",
+      "value": 27.53,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2021-03-01",
+      "value": 26.12,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2021-04-01",
+      "value": 25.96,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2021-05-01",
+      "value": 25.14,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2021-06-01",
+      "value": 26.49,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2021-07-01",
+      "value": 27.01,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2021-08-01",
+      "value": 27.7,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2021-09-01",
+      "value": 28.76,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2021-10-01",
+      "value": 29.6,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2021-11-01",
+      "value": 29.67,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2021-12-01",
+      "value": 29.05,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2022-01-01",
+      "value": 26.45,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2022-02-01",
+      "value": 27.54,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2022-03-01",
+      "value": 26.33,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2022-04-01",
+      "value": 25.75,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2022-05-01",
+      "value": 25.58,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2022-06-01",
+      "value": 25.24,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2022-07-01",
+      "value": 26.13,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2022-08-01",
+      "value": 26.34,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2022-09-01",
+      "value": 28.67,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2022-10-01",
+      "value": 29.37,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2022-11-01",
+      "value": 27.8,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2022-12-01",
+      "value": 28.59,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2023-01-01",
+      "value": 27.46,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2023-02-01",
+      "value": 26.6,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2023-03-01",
+      "value": 25.43,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2023-04-01",
+      "value": 24.68,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2023-05-01",
+      "value": 25.57,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2023-06-01",
+      "value": 26.46,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2023-07-01",
+      "value": 27.5,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2023-08-01",
+      "value": 28.12,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2023-09-01",
+      "value": 29.19,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2023-10-01",
+      "value": 29.82,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2023-11-01",
+      "value": 29.99,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2023-12-01",
+      "value": 28.34,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    }
+  ],
+  "analysis_series": [
+    {
+      "timestamp": "2020-01-01",
+      "value": 27.96,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2020-02-01",
+      "value": 26.66,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2020-03-01",
+      "value": 25.85,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2020-04-01",
+      "value": 25.31,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2020-05-01",
+      "value": 25.33,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2020-06-01",
+      "value": 25.76,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2020-07-01",
+      "value": 25.91,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2020-08-01",
+      "value": 28.09,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2020-09-01",
+      "value": 28.76,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2020-10-01",
+      "value": 29.59,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2020-11-01",
+      "value": 29.41,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2020-12-01",
+      "value": 29.36,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2021-01-01",
+      "value": 28.29,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2021-02-01",
+      "value": 27.53,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2021-03-01",
+      "value": 26.12,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2021-04-01",
+      "value": 25.96,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2021-05-01",
+      "value": 25.14,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2021-06-01",
+      "value": 26.49,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2021-07-01",
+      "value": 27.01,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2021-08-01",
+      "value": 27.7,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2021-09-01",
+      "value": 28.76,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2021-10-01",
+      "value": 29.6,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2021-11-01",
+      "value": 29.67,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2021-12-01",
+      "value": 29.05,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2022-01-01",
+      "value": 26.45,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2022-02-01",
+      "value": 27.54,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2022-03-01",
+      "value": 26.33,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2022-04-01",
+      "value": 25.75,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2022-05-01",
+      "value": 25.58,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2022-06-01",
+      "value": 25.24,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2022-07-01",
+      "value": 26.13,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2022-08-01",
+      "value": 26.34,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2022-09-01",
+      "value": 28.67,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2022-10-01",
+      "value": 29.37,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2022-11-01",
+      "value": 27.8,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2022-12-01",
+      "value": 28.59,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2023-01-01",
+      "value": 27.46,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2023-02-01",
+      "value": 26.6,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2023-03-01",
+      "value": 25.43,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2023-04-01",
+      "value": 24.68,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2023-05-01",
+      "value": 25.57,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2023-06-01",
+      "value": 26.46,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2023-07-01",
+      "value": 27.5,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2023-08-01",
+      "value": 28.12,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2023-09-01",
+      "value": 29.19,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2023-10-01",
+      "value": 29.82,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2023-11-01",
+      "value": 29.99,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    },
+    {
+      "timestamp": "2023-12-01",
+      "value": 28.34,
+      "unit": "\u00b0C",
+      "quality_flags": "ok",
+      "coverage_fraction": 1.0
+    }
+  ],
+  "trend": {
+    "direction": "increasing",
+    "applicable": true,
+    "slope_per_decade": 1.869108,
+    "slope_unit": "\u00b0C",
+    "confidence_interval": [
+      -1.932392,
+      5.670608
+    ],
+    "p_value": 0.340243,
+    "alpha": 0.05,
+    "estimator": "linear_regression",
+    "inference_method": "OLS with standard error estimate",
+    "significant": false
+  },
+  "quality": {
+    "sample_count": 48,
+    "expected_count": 48,
+    "coverage_fraction": 1.0,
+    "warnings": []
+  },
+  "explanation": {
+    "summary": "Monthly data at the nearest NASA grid cell.",
+    "limitations": "The trend is a descriptive linear fit. Its significance assumes independent residuals, which may be affected by seasonality and serial correlation."
+  },
+  "statistics": {
+    "count": 48,
+    "mean": 27.33875,
+    "median": 27.48,
+    "min": 24.68,
+    "max": 29.99,
+    "standard_deviation": 1.549354876041927
+  },
+  "forecast": {
+    "method": "Historical mean for the same calendar month",
+    "points": [
+      {
+        "timestamp": "2024-01-01",
+        "value": 27.54
+      },
+      {
+        "timestamp": "2024-02-01",
+        "value": 27.0825
+      },
+      {
+        "timestamp": "2024-03-01",
+        "value": 25.9325
+      },
+      {
+        "timestamp": "2024-04-01",
+        "value": 25.425
+      },
+      {
+        "timestamp": "2024-05-01",
+        "value": 25.405
+      },
+      {
+        "timestamp": "2024-06-01",
+        "value": 25.9875
+      }
+    ],
+    "backtest_mae": 0.6338888888888897,
+    "backtest_count": 12
+  }
+}

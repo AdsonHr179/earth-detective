@@ -24,7 +24,8 @@ def _hourly_frame(parameter: str, start: str, end: str, value: float) -> pd.Data
 
 
 @pytest.fixture(autouse=True)
-def clear_provider_cache():
+def clear_provider_cache(monkeypatch):
+    monkeypatch.setenv("ENABLE_UNVERIFIED_PROVIDERS", "1")
     meteomatics.clear_cache()
     main.clear_analysis_cache()
     yield
@@ -430,3 +431,23 @@ def test_provider_failure_is_reported_without_internal_details(monkeypatch):
     assert response.json()["detail"] == "Meteomatics data could not be retrieved or parsed"
     assert response.json()["error"]["code"] == "upstream_error"
     assert "sensitive provider response" not in response.text
+
+
+@pytest.mark.parametrize("bad_value", [float("inf"), float("-inf"), float("nan")])
+def test_monthly_total_is_null_when_an_hour_is_nonfinite(bad_value):
+    frame = _hourly_frame("precip_1h:mm", "2024-02-01 00:00", "2024-02-29 23:00", 0.1)
+    frame.iloc[10, 0] = bad_value
+    result = meteomatics._month_series(
+        frame, "precip_1h:mm", "sum", "mm/month", dt.date(2024, 2, 1), dt.date(2024, 2, 29),
+    )
+    assert result["series"][0]["value"] is None
+    assert result["hourly_coverage_fraction"] == pytest.approx(695 / 696)
+
+
+def test_almost_full_month_at_request_boundary_is_not_a_monthly_mean():
+    frame = _hourly_frame("t_2m:C", "2024-02-02 00:00", "2024-02-29 23:00", 21)
+    result = meteomatics._month_series(
+        frame, "t_2m:C", "mean", "°C", dt.date(2024, 2, 2), dt.date(2024, 2, 29),
+    )
+    assert result["series"][0]["value"] is None
+    assert result["hourly_coverage_fraction"] == pytest.approx(28 / 29)

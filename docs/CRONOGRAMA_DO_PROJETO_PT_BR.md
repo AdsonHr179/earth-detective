@@ -1,5 +1,7 @@
 # Cronograma do projeto — Earth Detective
 
+> HISTÓRICO de 14/11/2026. As estimativas, estados e cinco papéis abaixo foram substituídos pelo protocolo A/B de 15/11. Estado atual em [FINALIZACAO.md](FINALIZACAO.md), protocolo em [frente-a/ESCOPO-E-PROTOCOLO.md](frente-a/ESCOPO-E-PROTOCOLO.md). Preservado para rastreabilidade; não usar como descrição da entrega atual.
+
 **Idioma deste documento:** português (Brasil)  
 **Atualizado em:** 14/11/2026  
 **Status:** planejamento do MVP; as estimativas dependem da validação dos dados e do acesso à API.

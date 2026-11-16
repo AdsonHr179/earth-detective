@@ -21,6 +21,9 @@ export type AnalysisFilters = {
   endDate: string;
 };
 
+export const WORLD_REGION_ID = 'world';
+export const PUBLIC_TEMPERATURE_ID = 'nasa_power_temperature';
+
 export const DEFAULT_FILTERS: AnalysisFilters = {
   variableId: 'air_temperature',
   regionId: 'ceara',
@@ -35,11 +38,12 @@ export const STALE_NOTICE =
 type Phase = 'idle' | 'loading' | 'error';
 type ResultKind = 'success' | 'no-data';
 type StoredResult = { analysis: AnalysisResponse; kind: ResultKind; key: string };
+type RetryTarget = { kind: 'new'; filters: AnalysisFilters } | { kind: 'saved'; analysisId: string };
 
 function effectivePoint(filters: AnalysisFilters, regions: RegionRecord[]): GeoJSONPoint | null {
   if (filters.point) return filters.point;
   const region = regions.find((item) => item.id === filters.regionId);
-  if (!region) return null;
+  if (!region?.center) return null;
   return {
     type: 'Point',
     coordinates: [region.center.longitude, region.center.latitude],
@@ -78,7 +82,7 @@ export function useAnalysis({ regions, availability, defaults = DEFAULT_FILTERS 
   const defaultsRef = useRef(defaults);
   const controllerRef = useRef<AbortController | null>(null);
   const requestIdRef = useRef(0);
-  const lastRequestRef = useRef<AnalysisFilters | null>(null);
+  const lastRequestRef = useRef<RetryTarget | null>(null);
 
   useEffect(() => {
     regionsRef.current = regions;
@@ -126,6 +130,7 @@ export function useAnalysis({ regions, availability, defaults = DEFAULT_FILTERS 
       // A request in flight no longer matches the filters; drop it. An error also no longer applies.
       const previousPhase = phaseRef.current;
       cancelInFlight();
+      lastRequestRef.current = null;
       setPhase('idle');
       setError(null);
       if (nextMessage !== undefined) {
@@ -162,7 +167,13 @@ export function useAnalysis({ regions, availability, defaults = DEFAULT_FILTERS 
   const setPoint = useCallback(
     (point: GeoJSONPoint | null) =>
       updateFilters(
-        (f) => ({ ...f, point }),
+        (f) => ({
+          ...f,
+          point,
+          regionId: point && regionsRef.current.some((region) => region.id === WORLD_REGION_ID)
+            ? WORLD_REGION_ID
+            : f.regionId,
+        }),
         point
           ? `Position selected: ${formatCoordinatePair(point.coordinates[1], point.coordinates[0])}. Run an analysis to query this point.`
           : '',
@@ -175,7 +186,7 @@ export function useAnalysis({ regions, availability, defaults = DEFAULT_FILTERS 
       const next: AnalysisFilters = { ...filtersRef.current, ...overrides };
       commitFilters(next);
       cancelInFlight();
-      lastRequestRef.current = next;
+      lastRequestRef.current = { kind: 'new', filters: next };
 
       setError(null);
       const fail = (text: string) => {
@@ -215,7 +226,11 @@ export function useAnalysis({ regions, availability, defaults = DEFAULT_FILTERS 
         fail('Select a region from the backend catalog before running an analysis.');
         return;
       }
-      const queryPoint = effectivePoint(next, knownRegions) as GeoJSONPoint;
+      const queryPoint = effectivePoint(next, knownRegions);
+      if (!queryPoint) {
+        fail('Click the map or enter coordinates to choose a point for analysis.');
+        return;
+      }
       const key = requestKey(next, knownRegions);
 
       const controller = new AbortController();
@@ -246,7 +261,7 @@ export function useAnalysis({ regions, availability, defaults = DEFAULT_FILTERS 
           setPhase('idle');
           setMessage(
             hasData
-              ? 'Analysis complete. Review the trend, confidence band, and limitations.'
+              ? 'Analysis complete. Review the observations, inference status, and limitations.'
               : 'No valid observations are available for the selected filters.',
           );
           if (next.point === null) {
@@ -273,7 +288,7 @@ export function useAnalysis({ regions, availability, defaults = DEFAULT_FILTERS 
   const loadSaved = useCallback(
     (analysisId: string) => {
       cancelInFlight();
-      lastRequestRef.current = null;
+      lastRequestRef.current = { kind: 'saved', analysisId };
       setError(null);
 
       const controller = new AbortController();
@@ -297,7 +312,6 @@ export function useAnalysis({ regions, availability, defaults = DEFAULT_FILTERS 
             endDate: analysis.end_date,
           };
           commitFilters(next);
-          lastRequestRef.current = next;
           const hasData = (analysis.chart_points ?? []).some((point) => point.value !== null);
           setResult({ analysis, kind: hasData ? 'success' : 'no-data', key: requestKey(next, regionsRef.current) });
           setPhase('idle');
@@ -320,14 +334,17 @@ export function useAnalysis({ regions, availability, defaults = DEFAULT_FILTERS 
   );
 
   const retry = useCallback(() => {
+    if (phaseRef.current !== 'error') return;
     const last = lastRequestRef.current;
-    if (last) run(last);
-  }, [run]);
+    if (last?.kind === 'saved') loadSaved(last.analysisId);
+    else if (last?.kind === 'new') run(last.filters);
+  }, [loadSaved, run]);
 
   /** Stops a request in flight. The choices stay as they are and nothing is shown as a result. */
   const cancel = useCallback(() => {
     if (phaseRef.current !== 'loading') return;
     cancelInFlight();
+    lastRequestRef.current = null;
     setError(null);
     setPhase('idle');
     setMessage('Analysis cancelled. Your choices are unchanged.');

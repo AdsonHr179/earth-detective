@@ -26,7 +26,13 @@ export function buildBadges(analysis: BadgeSource): Badge[] {
     text: `${coverage}% of months have data`,
   });
 
-  if (!trend.applicable) {
+  if (trend.inference_status === 'legacy') {
+    badges.push({ id: 'significance', kind: 'warn', icon: 'triangle', text: 'Legacy inference not validated' });
+  } else if (trend.inference_status === 'descriptive') {
+    badges.push({ id: 'significance', kind: 'neutral', icon: 'circle', text: 'Descriptive estimate only' });
+  } else if (trend.inference_status === 'insufficient_data' || trend.inference_status === 'unsupported') {
+    badges.push({ id: 'significance', kind: 'warn', icon: 'triangle', text: trend.inference_status === 'unsupported' ? 'Inference unsupported' : 'Insufficient data for inference' });
+  } else if (!trend.applicable) {
     badges.push({ id: 'significance', kind: 'neutral', icon: 'circle', text: 'No trend test for this variable' });
   } else if (trend.significant === null) {
     badges.push({ id: 'significance', kind: 'neutral', icon: 'circle', text: 'Significance not reported' });

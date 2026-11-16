@@ -258,6 +258,8 @@ export function lastValidPoint(points: ChartPoint[], startMs: number, endMs: num
 }
 
 export type SeriesDescription = {
+  slopeUnit?: string;
+  inferenceStatus?: string;
   variableName: string;
   regionName?: string;
   unit: string;
@@ -280,16 +282,20 @@ export function describeSeries(input: SeriesDescription): string {
     `${input.variableName}${where}, monthly values from ${formatMonth(dated[0].ms)} to ${formatMonth(dated[dated.length - 1].ms)}.`,
     `Values range from ${formatNumber(Math.min(...values))} to ${formatNumber(Math.max(...values))} ${input.unit}.`,
   ];
-  if (!input.applicable) {
+  if (input.inferenceStatus === 'insufficient_data') {
+    parts.push('No trend could be estimated from the available observations.');
+  } else if (!input.applicable) {
     parts.push('No linear trend is calculated for this variable.');
   } else if (isValid(input.ratePerDecade)) {
     const signal =
-      input.significant === null
+      input.inferenceStatus && input.inferenceStatus !== 'validated'
+        ? 'descriptive only; inference not validated'
+        : input.significant === null
         ? 'significance not reported'
         : input.significant
           ? 'statistically significant'
           : 'not statistically significant';
-    parts.push(`Trend ${formatSigned(input.ratePerDecade)} ${input.unit} per decade, ${signal}.`);
+    parts.push(`Trend ${formatSigned(input.ratePerDecade)} ${input.slopeUnit || `${input.unit} per decade`}, ${signal}.`);
   } else {
     parts.push('No trend could be estimated.');
   }

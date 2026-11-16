@@ -1,0 +1,54 @@
+
+> earth-detective-frontend@0.1.0 test
+> vitest run
+
+
+ RUN  v2.1.9 C:/Users/adson/.codex/worktrees/earth-delivery-a/earth-detective/frontend
+
+ ✓ src/hooks/useAnalysis.test.ts (16 tests) 1841ms
+ ✓ src/App.test.tsx (11 tests) 4346ms
+   ✓ App first screen > opens in Ceará on an honest ready state: no number, no analysis request, a clear primary button 583ms
+   ✓ App analysis flow > Cancel stops the request and returns to ready with the choices intact 363ms
+   ✓ App analysis flow > explains a 503 in plain words (with the service message) and retries without losing the selection 431ms
+   ✓ App analysis flow > flags the result as stale and keeps its title when a choice changes 863ms
+   ✓ App analysis flow > sends the typed latitude and longitude as the analysis point 557ms
+   ✓ App Reset > restores variable, region, dates and point, and clears the point choice 649ms
+   ✓ App on a narrow screen > moves Run analysis into a bottom sheet that collapses with aria-expanded 332ms
+ ✓ src/components/ControlsBar.test.tsx (14 tests) 2606ms
+   ✓ coordinate fields (keyboard) > opens from the keyboard, focuses latitude, and applies a typed point with Enter 667ms
+   ✓ coordinate fields (keyboard) > rejects out-of-range values, explains them and keeps focus in the form 330ms
+ ✓ src/App.saved.test.tsx (7 tests) 2911ms
+   ✓ Saved analyses list > shows a loading state, then the saved results with names and period 839ms
+   ✓ Saved analyses list > shows a failure to open a saved result and keeps no result 504ms
+   ✓ Saved analyses list > retries opening the same saved id without creating a new analysis 426ms
+   ✓ Download CSV > uses the export endpoint of the analysis id 412ms
+ ✓ src/api/dataContract.test.ts (11 tests) 547ms
+ ✓ src/components/ResultPanel.test.tsx (10 tests) 1393ms
+   ✓ ResultPanel with a result > shows the big rate with unit, the template sentence, provenance and the one-point seal 637ms
+ ✓ src/lib/chart.test.ts (22 tests) 18ms
+ ✓ src/components/TrendChart.test.tsx (9 tests) 485ms
+ ✓ src/lib/sentences.test.ts (10 tests) 19ms
+ ✓ src/components/TrendChartForecast.test.tsx (6 tests) 282ms
+ ✓ src/api/client.test.ts (8 tests) 268ms
+ ✓ src/App.case.test.tsx (4 tests) 1777ms
+   ✓ Main case entry and availability (TEST FIXTURES ONLY) > selects catalog-backed POWER case without querying until Run analysis is clicked 787ms
+   ✓ Main case entry and availability (TEST FIXTURES ONLY) > keeps the unavailability reason visible beside a stale result 829ms
+ ✓ src/lib/quality.test.ts (8 tests) 59ms
+ ✓ src/lib/coordinates.test.ts (8 tests) 39ms
+ ✓ src/api/inferenceContract.test.ts (7 tests) 19ms
+ ✓ src/components/InferenceStates.test.tsx (5 tests) 506ms
+ ✓ src/lib/errors.test.ts (11 tests) 18ms
+ ✓ src/components/ResultPanelData.test.tsx (5 tests) 684ms
+   ✓ ResultPanel descriptive statistics > shows every statistic with its unit when the backend sent them 328ms
+ ✓ src/components/StateViews.test.tsx (5 tests) 882ms
+   ✓ state views > ready state says what to do and shows no number 595ms
+ ✓ src/components/AppShell.test.tsx (3 tests) 625ms
+   ✓ AppShell and ResultSheet > renders the map, the controls and the result column on desktop without a toggle 325ms
+ ✓ src/test/smoke.test.ts (1 test) 118ms
+ ✓ src/components/LazyMap.test.tsx (3 tests) 796ms
+   ✓ LazyMap > shows a placeholder first and the map module after the first paint 656ms
+
+ Test Files  22 passed (22)
+      Tests  184 passed (184)
+   Start at  17:33:05
+   Duration  170.69s (transform 3.96s, setup 68.81s, collect 22.25s, tests 20.24s, environment 186.16s, prepare 13.50s)

@@ -1,0 +1,16 @@
+{
+  "scope": "LIVE NASA on baseline backend, not acceptance of B or a public deployment",
+  "observed_at": "2026-11-15T20:17:17.382Z",
+  "base": "http://127.0.0.1:8910",
+  "checks": [
+    "Live POST returned 48 monthly observations; legacy warning visible; no significance seal or projection",
+    "Browser CSV equals saved export endpoint byte-for-byte",
+    "390px renders with no document horizontal overflow",
+    "Saved NASA result reopens after reload without recalculation",
+    "No browser page errors"
+  ],
+  "browser": "157.0.4341.60",
+  "analysis_id": "4c600ca3-e6a5-4d83-a3c7-34fc34371dc0",
+  "method_version": "nasa-monthly-v1",
+  "passed": true
+}
